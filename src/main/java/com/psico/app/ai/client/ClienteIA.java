@@ -1,21 +1,27 @@
 package com.psico.app.ai.client;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * ClienteIA
  * Realiza la petición HTTP a la API de Google Gemini.
  */
 @Component
-@Slf4j
 public class ClienteIA {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClienteIA.class);
 
     @Value("${gemini.api.key}")
     private String apiKey;
@@ -49,19 +55,38 @@ public class ClienteIA {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(urlConKey, request, Map.class);
-            Map body2 = response.getBody();
+            ResponseEntity<Object> response = restTemplate.postForEntity(
+                    urlConKey,
+                    request,
+                    Object.class
+            );
 
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) body2.get("candidates");
-            if (candidates != null && !candidates.isEmpty()) {
-                Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-                List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-                if (parts != null && !parts.isEmpty()) {
-                    return (String) parts.get(0).get("text");
+            Object responseBodyObj = response.getBody();
+            if (!(responseBodyObj instanceof Map<?, ?> responseBody)) {
+                return "Lo siento, no pude procesar tu mensaje en este momento. ¿Puedes intentarlo de nuevo?";
+            }
+
+            Object candidatesObj = responseBody.get("candidates");
+            if (candidatesObj instanceof List<?> candidates && !candidates.isEmpty()) {
+                Object firstCandidateObj = candidates.get(0);
+                if (firstCandidateObj instanceof Map<?, ?> firstCandidate) {
+                    Object contentObj = firstCandidate.get("content");
+                    if (contentObj instanceof Map<?, ?> content) {
+                        Object partsObj = content.get("parts");
+                        if (partsObj instanceof List<?> parts && !parts.isEmpty()) {
+                            Object firstPartObj = parts.get(0);
+                            if (firstPartObj instanceof Map<?, ?> firstPart) {
+                                Object textObj = firstPart.get("text");
+                                if (textObj instanceof String text && !text.isBlank()) {
+                                    return text;
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        } catch (Exception e) {
-            log.error("Error al comunicarse con Gemini: {}", e.getMessage());
+        } catch (RestClientException e) {
+            logger.error("Error al comunicarse con Gemini: {}", e.getMessage(), e);
             return "Lo siento, hubo un problema al procesar tu mensaje. ¿Puedes intentarlo de nuevo?";
         }
 
