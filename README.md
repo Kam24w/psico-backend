@@ -7,7 +7,7 @@ Backend de la aplicación de acompañamiento emocional inteligente.
 - Spring Boot 3.2
 - Spring Security + JWT
 - MySQL
-- Claude API (Anthropic)
+- Google Gemini API con Gemma 4
 
 ## 🚀 Levantar localmente
 
@@ -22,7 +22,8 @@ DATABASE_URL=jdbc:mysql://localhost:3306/psicodb?createDatabaseIfNotExist=true&u
 DATABASE_USERNAME=root
 DATABASE_PASSWORD=tu_password
 JWT_SECRET=psico-virtual-secret-key-2024-muy-segura-32chars
-ANTHROPIC_API_KEY=tu-api-key-de-claude
+GEMINI_API_KEY=tu-api-key-de-google
+GEMINI_MODEL=gemma-4-26b-a4b-it
 CORS_ORIGINS=http://localhost:5173
 ```
 

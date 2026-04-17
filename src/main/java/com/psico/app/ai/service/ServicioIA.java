@@ -1,17 +1,19 @@
 package com.psico.app.ai.service;
 
+import org.springframework.stereotype.Service;
+
 import com.psico.app.ai.client.ClienteIA;
 import com.psico.app.emotion.model.TipoEmocion;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 /**
  * ServicioIA
  * Orquesta la generación de respuestas combinando:
  * 1. El mensaje del usuario
  * 2. La emoción detectada (vía Strategy + Factory)
- * 3. La petición a Claude API (vía ClienteIA)
+ * 3. La petición a la API de Google Gemini/Gemma 4 (vía ClienteIA)
  */
 @Service
 @RequiredArgsConstructor
