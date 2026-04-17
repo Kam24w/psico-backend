@@ -54,7 +54,7 @@ public class ClienteIA {
                     "parts", List.of(
                         Map.of("text", userMessage)
                     )
-                ))
+                )
             ),
             "generationConfig", Map.of(
                 "maxOutputTokens", 512,
