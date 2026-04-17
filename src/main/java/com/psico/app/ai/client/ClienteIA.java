@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * ClienteIA
- * Realiza la petición HTTP a la API de Google Gemini.
+ * Realiza la petición HTTP a la API de Google Gemini usando Gemma 4.
  */
 @Component
 public class ClienteIA {
@@ -32,18 +32,28 @@ public class ClienteIA {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public String enviarMensaje(String systemPrompt, String userMessage) {
+        if (apiKey == null || apiKey.isBlank()) {
+            logger.error("No se configuró GEMINI_API_KEY. La IA no puede responder.");
+            return "La IA no está configurada en este entorno. Falta GEMINI_API_KEY.";
+        }
+
         String urlConKey = apiUrl + "?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Gemini recibe system + user como partes del mismo mensaje
-        String mensajeCompleto = systemPrompt + "\n\nUsuario: " + userMessage;
-
         Map<String, Object> body = Map.of(
+            "systemInstruction", Map.of(
+                "parts", List.of(
+                    Map.of("text", systemPrompt)
+                )
+            ),
             "contents", List.of(
-                Map.of("parts", List.of(
-                    Map.of("text", mensajeCompleto)
+                Map.of(
+                    "role", "user",
+                    "parts", List.of(
+                        Map.of("text", userMessage)
+                    )
                 ))
             ),
             "generationConfig", Map.of(
@@ -86,7 +96,7 @@ public class ClienteIA {
                 }
             }
         } catch (RestClientException e) {
-            logger.error("Error al comunicarse con Gemini: {}", e.getMessage(), e);
+            logger.error("Error al comunicarse con Gemma/Gemini: {}", e.getMessage(), e);
             return "Lo siento, hubo un problema al procesar tu mensaje. ¿Puedes intentarlo de nuevo?";
         }
 
