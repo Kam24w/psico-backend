@@ -1,16 +1,29 @@
 package com.psico.app.auth.service;
 
-import com.psico.app.auth.dto.AuthDTOs.*;
-import com.psico.app.auth.model.Rol;
-import com.psico.app.auth.model.Usuario;
-import com.psico.app.auth.security.JwtUtil;
-import com.psico.app.user.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.psico.app.auth.dto.AuthDTOs.AuthResponse;
+import com.psico.app.auth.dto.AuthDTOs.LoginRequest;
+import com.psico.app.auth.dto.AuthDTOs.RegisterRequest;
+import com.psico.app.auth.model.Rol;
+import com.psico.app.auth.model.Usuario;
+import com.psico.app.auth.security.JwtUtil;
+import com.psico.app.auth.validator.LoginValidator;
+import com.psico.app.auth.validator.UserValidator;
+import com.psico.app.common.exception.EmailAlreadyExistsException;
+import com.psico.app.common.exception.UserNotFoundException;
+import com.psico.app.common.exception.ValidationException;
+import com.psico.app.user.repository.UsuarioRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -19,17 +32,47 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final UserValidator userValidator;
+    private final LoginValidator loginValidator;
 
+    // ===================== LOGIN =====================
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
 
+        log.info("Login attempt for email: {}", request.getEmail());
+
+        // 1. Validar datos
+        loginValidator.validate(request);
+
+        try {
+            // 2. Autenticar con Spring Security
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (BadCredentialsException | InternalAuthenticationServiceException e) {
+            log.error("Authentication failed for email: {}", request.getEmail());
+
+            throw new ValidationException(
+                    "INVALID_CREDENTIALS",
+                    "Credenciales incorrectas"
+            );
+        }
+
+        // 3. Buscar usuario
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UserNotFoundException(
+                        "USER_NOT_FOUND",
+                        "Usuario no encontrado"
+                ));
 
-        String token = jwtUtil.generarToken(usuario.getEmail());
+        // 4. Generar token
+        String token = generateToken(usuario);
 
+        log.info("Login successful for user: {}", usuario.getEmail());
+
+        // 5. Respuesta
         return AuthResponse.builder()
                 .token(token)
                 .usuarioId(usuario.getId())
@@ -39,11 +82,23 @@ public class AuthService {
                 .build();
     }
 
+    // ===================== REGISTER =====================
     public AuthResponse register(RegisterRequest request) {
+
+        log.info("Register attempt for email: {}", request.getEmail());
+
+        // 1. Validar datos
+        userValidator.validarRegistro(request);
+
+        // 2. Verificar email duplicado
         if (usuarioRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new EmailAlreadyExistsException(
+                    "EMAIL_ALREADY_EXISTS",
+                    "El email ya está registrado"
+            );
         }
 
+        // 3. Crear usuario
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
                 .email(request.getEmail())
@@ -51,9 +106,24 @@ public class AuthService {
                 .rol(Rol.USER)
                 .build();
 
-        usuarioRepository.save(usuario);
-        String token = jwtUtil.generarToken(usuario.getEmail());
+        // 4. Guardar usuario
+        try {
+            usuarioRepository.save(usuario);
+        } catch (Exception e) {
+            log.error("Error saving user: {}", request.getEmail());
 
+            throw new ValidationException(
+                    "REGISTER_ERROR",
+                    "Error al registrar el usuario"
+            );
+        }
+
+        // 5. Generar token
+        String token = generateToken(usuario);
+
+        log.info("User registered successfully: {}", usuario.getEmail());
+
+        // 6. Respuesta
         return AuthResponse.builder()
                 .token(token)
                 .usuarioId(usuario.getId())
@@ -61,5 +131,10 @@ public class AuthService {
                 .email(usuario.getEmail())
                 .rol(usuario.getRol().name())
                 .build();
+    }
+
+    // ===================== UTIL =====================
+    private String generateToken(Usuario usuario) {
+        return jwtUtil.generarToken(usuario.getEmail());
     }
 }
