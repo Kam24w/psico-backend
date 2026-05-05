@@ -8,6 +8,7 @@ import com.psico.app.patterns.observer.NotificadorEmocion;
 import com.psico.app.user.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class EmocionService {
     private final UsuarioService usuarioService;
     private final NotificadorEmocion notificadorEmocion;
 
+    @Transactional
     public Emocion registrarEmocion(Long usuarioId, TipoEmocion tipo, Double intensidad) {
         Usuario usuario = usuarioService.buscarPorId(usuarioId);
 
@@ -36,11 +38,13 @@ public class EmocionService {
         return guardada;
     }
 
+    @Transactional(readOnly = true)
     public TipoEmocion obtenerUltimaEmocion(Long usuarioId) {
         Emocion ultima = emocionRepository.findUltimaEmocionByUsuarioId(usuarioId);
         return ultima != null ? ultima.getTipo() : TipoEmocion.NEUTRAL;
     }
 
+    @Transactional(readOnly = true)
     public List<Emocion> obtenerHistorial(Long usuarioId) {
         return emocionRepository.findByUsuarioIdOrderByDetectedAtDesc(usuarioId);
     }

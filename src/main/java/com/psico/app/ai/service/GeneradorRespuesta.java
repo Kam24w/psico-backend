@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * GeneradorRespuesta
  * Combina el mensaje del usuario + emoción detectada
- * para construir el contexto completo que se enviará a Claude.
+ * para construir el contexto completo que se enviará a Gemma 4.
  */
 @Component
 @RequiredArgsConstructor
@@ -17,13 +17,23 @@ public class GeneradorRespuesta {
 
     private final FabricaEstrategia fabricaEstrategia;
 
-    public String construirPromptSistema(TipoEmocion emocion) {
+    public String construirPromptSistema(TipoEmocion emocion, String personalidadBase) {
         EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
-        return estrategia.obtenerInstruccionesSistema();
+        String instruccionesEmocion = estrategia.obtenerInstruccionesSistema();
+        
+        return String.format("%s\n\nContexto de Personalidad Adicional:\n%s", 
+                instruccionesEmocion, 
+                personalidadBase != null ? personalidadBase : "Eres un profesional empático.");
     }
 
-    public String construirMensajeUsuario(String mensajeOriginal, TipoEmocion emocion) {
+    public String construirMensajeUsuario(String mensajeOriginal, TipoEmocion emocion, String memoriaUsuario) {
         EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
-        return estrategia.generarContexto(mensajeOriginal);
+        String mensajeContextualizado = estrategia.generarContexto(mensajeOriginal);
+        
+        if (memoriaUsuario != null && !memoriaUsuario.isBlank()) {
+            return String.format("Memoria relevante del usuario:\n%s\n\nMensaje actual:\n%s", 
+                    memoriaUsuario, mensajeContextualizado);
+        }
+        return mensajeContextualizado;
     }
 }
