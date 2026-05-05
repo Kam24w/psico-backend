@@ -6,6 +6,7 @@ import com.psico.app.conversation.repository.ConversacionRepository;
 import com.psico.app.conversation.repository.MensajeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class HistorialConversacion {
         return mensajeRepository.findByConversacionIdOrderByFechaAsc(conversacionId);
     }
 
+    @Transactional
     public void cerrarConversacion(Long conversacionId) {
         conversacionRepository.findById(conversacionId).ifPresent(conv -> {
             conv.setActiva(false);

@@ -51,7 +51,7 @@ public class AuthService {
                 .rol(Rol.USER)
                 .build();
 
-        usuarioRepository.save(usuario);
+        usuario = usuarioRepository.save(usuario);
         String token = jwtUtil.generarToken(usuario.getEmail());
 
         return AuthResponse.builder()

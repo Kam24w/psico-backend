@@ -43,7 +43,11 @@ public class ConversacionService {
                 .emocionAsociada(emocionActual)
                 .conversacion(conversacion)
                 .build();
-        mensajeRepository.save(mensajeUsuario);
+        mensajeUsuario = mensajeRepository.save(mensajeUsuario);
+
+        // Actualizar timestamp de la conversación
+        conversacion.setUpdatedAt(java.time.LocalDateTime.now());
+        conversacionRepository.save(conversacion);
 
         // Obtener emoción (del request o la última registrada)
         TipoEmocion emocion = emocionActual != null
@@ -51,7 +55,7 @@ public class ConversacionService {
                 : emocionService.obtenerUltimaEmocion(usuarioId);
 
         // Generar respuesta de IA
-        String respuestaTexto = servicioIA.generarRespuesta(contenido, emocion);
+        String respuestaTexto = servicioIA.generarRespuesta(usuarioId, contenido, emocion);
 
         // Guardar respuesta de IA
         Mensaje respuestaIA = Mensaje.builder()
@@ -60,7 +64,7 @@ public class ConversacionService {
                 .emocionAsociada(emocion)
                 .conversacion(conversacion)
                 .build();
-        mensajeRepository.save(respuestaIA);
+        respuestaIA = mensajeRepository.save(respuestaIA);
 
         log.info("Mensaje procesado para usuario {} con emoción {}", usuarioId, emocion);
         return respuestaIA;
