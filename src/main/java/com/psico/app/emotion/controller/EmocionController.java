@@ -6,9 +6,11 @@ import com.psico.app.emotion.service.EmocionService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/emocion")
@@ -20,7 +22,7 @@ public class EmocionController {
     @PostMapping
     public ResponseEntity<Emocion> registrarEmocion(@RequestBody EmocionRequest request) {
         Emocion emocion = emocionService.registrarEmocion(
-                request.getUsuarioId(),
+                Objects.requireNonNull(request.getUsuarioId()),
                 request.getTipo(),
                 request.getIntensidad()
         );
@@ -28,12 +30,12 @@ public class EmocionController {
     }
 
     @GetMapping("/ultima/{usuarioId}")
-    public ResponseEntity<TipoEmocion> obtenerUltima(@PathVariable Long usuarioId) {
+    public ResponseEntity<TipoEmocion> obtenerUltima(@PathVariable @NonNull Long usuarioId) {
         return ResponseEntity.ok(emocionService.obtenerUltimaEmocion(usuarioId));
     }
 
     @GetMapping("/historial/{usuarioId}")
-    public ResponseEntity<List<Emocion>> obtenerHistorial(@PathVariable Long usuarioId) {
+    public ResponseEntity<List<Emocion>> obtenerHistorial(@PathVariable @NonNull Long usuarioId) {
         return ResponseEntity.ok(emocionService.obtenerHistorial(usuarioId));
     }
 

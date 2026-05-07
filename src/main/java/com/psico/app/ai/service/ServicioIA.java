@@ -1,5 +1,7 @@
 package com.psico.app.ai.service;
 
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,12 +95,13 @@ public class ServicioIA {
             // Truncar fragmento a 500 chars para evitar problemas de columna
             String fragmento = mensaje.length() > 500 ? mensaje.substring(0, 500) : mensaje;
 
-            alertaRepository.save(AlertaSeguridad.builder()
+            AlertaSeguridad alerta = AlertaSeguridad.builder()
                     .usuario(usuarioRef)
                     .tipo(tipo)
                     .nivelRiesgo(nivelRiesgo)
                     .fragmentoDetectado(fragmento)
-                    .build());
+                    .build();
+            alertaRepository.save(Objects.requireNonNull(alerta));
 
             log.warn("¡ALERTA DE SEGURIDAD [{}] nivel {} detectada para usuario {}!", tipo, nivelRiesgo, usuarioId);
         }

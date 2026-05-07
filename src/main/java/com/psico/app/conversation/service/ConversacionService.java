@@ -1,5 +1,8 @@
 package com.psico.app.conversation.service;
 
+import java.util.Objects;
+
+import org.springframework.lang.NonNull;
 import com.psico.app.ai.service.ServicioIA;
 import com.psico.app.auth.model.Usuario;
 import com.psico.app.conversation.model.Conversacion;
@@ -28,7 +31,7 @@ public class ConversacionService {
     private final UsuarioService usuarioService;
 
     @Transactional
-    public Mensaje procesarMensaje(Long usuarioId, String contenido, TipoEmocion emocionActual) {
+    public Mensaje procesarMensaje(@NonNull Long usuarioId, String contenido, TipoEmocion emocionActual) {
         Usuario usuario = usuarioService.buscarPorId(usuarioId);
 
         // Obtener o crear conversación activa
@@ -37,17 +40,17 @@ public class ConversacionService {
                 .orElseGet(() -> crearNuevaConversacion(usuario));
 
         // Guardar mensaje del usuario
-        Mensaje mensajeUsuario = Mensaje.builder()
+        Mensaje mensajeUsuario = Objects.requireNonNull(Mensaje.builder()
                 .contenido(contenido)
                 .remitente(Mensaje.Remitente.USER)
                 .emocionAsociada(emocionActual)
                 .conversacion(conversacion)
-                .build();
-        mensajeUsuario = mensajeRepository.save(mensajeUsuario);
+                .build());
+        mensajeUsuario = Objects.requireNonNull(mensajeRepository.save(mensajeUsuario));
 
         // Actualizar timestamp de la conversación
         conversacion.setUpdatedAt(java.time.LocalDateTime.now());
-        conversacionRepository.save(conversacion);
+        conversacionRepository.save(Objects.requireNonNull(conversacion));
 
         // Obtener emoción (del request o la última registrada)
         TipoEmocion emocion = emocionActual != null
@@ -58,30 +61,30 @@ public class ConversacionService {
         String respuestaTexto = servicioIA.generarRespuesta(usuarioId, contenido, emocion);
 
         // Guardar respuesta de IA
-        Mensaje respuestaIA = Mensaje.builder()
+        Mensaje respuestaIA = Objects.requireNonNull(Mensaje.builder()
                 .contenido(respuestaTexto)
                 .remitente(Mensaje.Remitente.AI)
                 .emocionAsociada(emocion)
                 .conversacion(conversacion)
-                .build();
-        respuestaIA = mensajeRepository.save(respuestaIA);
+                .build());
+        respuestaIA = Objects.requireNonNull(mensajeRepository.save(respuestaIA));
 
         log.info("Mensaje procesado para usuario {} con emoción {}", usuarioId, emocion);
         return respuestaIA;
     }
 
-    public List<Mensaje> obtenerHistorial(Long conversacionId) {
+    public List<Mensaje> obtenerHistorial(@NonNull Long conversacionId) {
         return mensajeRepository.findByConversacionIdOrderByFechaAsc(conversacionId);
     }
 
-    public List<Conversacion> obtenerConversacionesDeUsuario(Long usuarioId) {
+    public List<Conversacion> obtenerConversacionesDeUsuario(@NonNull Long usuarioId) {
         return conversacionRepository.findByUsuarioIdOrderByUpdatedAtDesc(usuarioId);
     }
 
     private Conversacion crearNuevaConversacion(Usuario usuario) {
-        Conversacion nueva = Conversacion.builder()
+        Conversacion nueva = Objects.requireNonNull(Conversacion.builder()
                 .usuario(usuario)
-                .build();
-        return conversacionRepository.save(nueva);
+                .build());
+        return Objects.requireNonNull(conversacionRepository.save(nueva));
     }
 }
