@@ -1,5 +1,7 @@
 package com.psico.app.auth.service;
 
+import java.util.Objects;
+
 import com.psico.app.auth.dto.AuthDTOs.*;
 import com.psico.app.auth.model.Rol;
 import com.psico.app.auth.model.Usuario;
@@ -44,14 +46,14 @@ public class AuthService {
             throw new RuntimeException("El email ya está registrado");
         }
 
-        Usuario usuario = Usuario.builder()
+        Usuario usuario = Objects.requireNonNull(Usuario.builder()
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .rol(Rol.USER)
-                .build();
+                .build());
 
-        usuario = usuarioRepository.save(usuario);
+        usuario = Objects.requireNonNull(usuarioRepository.save(usuario));
         String token = jwtUtil.generarToken(usuario.getEmail());
 
         return AuthResponse.builder()
