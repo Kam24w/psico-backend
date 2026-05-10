@@ -62,7 +62,7 @@ public class ServicioIA {
     }
 
     @Transactional
-    private void detectarRiesgos(Long usuarioId, String mensaje) {
+    public void detectarRiesgos(Long usuarioId, String mensaje) {
         String lower = mensaje.toLowerCase();
 
         int nivelRiesgo = 0;
