@@ -30,47 +30,51 @@ public class ConversacionService {
     private final EmocionService emocionService;
     private final UsuarioService usuarioService;
 
-    @Transactional
     public Mensaje procesarMensaje(@NonNull Long usuarioId, String contenido, TipoEmocion emocionActual) {
         Usuario usuario = usuarioService.buscarPorId(usuarioId);
 
-        // Obtener o crear conversación activa
-        Conversacion conversacion = conversacionRepository
-                .findFirstByUsuarioIdAndActivaTrue(usuarioId)
-                .orElseGet(() -> crearNuevaConversacion(usuario));
-
-        // Guardar mensaje del usuario
-        Mensaje mensajeUsuario = Objects.requireNonNull(Mensaje.builder()
-                .contenido(contenido)
-                .remitente(Mensaje.Remitente.USER)
-                .emocionAsociada(emocionActual)
-                .conversacion(conversacion)
-                .build());
-        mensajeUsuario = Objects.requireNonNull(mensajeRepository.save(mensajeUsuario));
-
-        // Actualizar timestamp de la conversación
-        conversacion.setUpdatedAt(java.time.LocalDateTime.now());
-        conversacionRepository.save(Objects.requireNonNull(conversacion));
+        // Obtener o crear conversación activa y guardar mensaje del usuario (en una transacción)
+        Conversacion conversacion = obtenerYGuardarMensajeUsuario(usuario, contenido, emocionActual);
 
         // Obtener emoción (del request o la última registrada)
         TipoEmocion emocion = emocionActual != null
                 ? emocionActual
                 : emocionService.obtenerUltimaEmocion(usuarioId);
 
-        // Generar respuesta de IA
+        // Generar respuesta de IA (FUERA de la transacción para no bloquear conexiones a la BD)
         String respuestaTexto = servicioIA.generarRespuesta(usuarioId, contenido, emocion);
 
-        // Guardar respuesta de IA
+        // Guardar respuesta de IA (en otra transacción)
+        return guardarRespuestaIA(conversacion, respuestaTexto, emocion);
+    }
+
+    @Transactional
+    protected Conversacion obtenerYGuardarMensajeUsuario(Usuario usuario, String contenido, TipoEmocion emocionActual) {
+        Conversacion conversacion = conversacionRepository
+                .findFirstByUsuarioIdAndActivaTrue(usuario.getId())
+                .orElseGet(() -> crearNuevaConversacion(usuario));
+
+        Mensaje mensajeUsuario = Objects.requireNonNull(Mensaje.builder()
+                .contenido(contenido)
+                .remitente(Mensaje.Remitente.USER)
+                .emocionAsociada(emocionActual)
+                .conversacion(conversacion)
+                .build());
+        mensajeRepository.save(mensajeUsuario);
+
+        conversacion.setUpdatedAt(java.time.LocalDateTime.now());
+        return conversacionRepository.save(Objects.requireNonNull(conversacion));
+    }
+
+    @Transactional
+    protected Mensaje guardarRespuestaIA(Conversacion conversacion, String respuestaTexto, TipoEmocion emocion) {
         Mensaje respuestaIA = Objects.requireNonNull(Mensaje.builder()
                 .contenido(respuestaTexto)
                 .remitente(Mensaje.Remitente.AI)
                 .emocionAsociada(emocion)
                 .conversacion(conversacion)
                 .build());
-        respuestaIA = Objects.requireNonNull(mensajeRepository.save(respuestaIA));
-
-        log.info("Mensaje procesado para usuario {} con emoción {}", usuarioId, emocion);
-        return respuestaIA;
+        return Objects.requireNonNull(mensajeRepository.save(respuestaIA));
     }
 
     public List<Mensaje> obtenerHistorial(@NonNull Long conversacionId) {
