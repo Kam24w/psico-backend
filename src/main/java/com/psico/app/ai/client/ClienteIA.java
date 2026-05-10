@@ -96,7 +96,10 @@ public class ClienteIA {
                 }
             }
         } catch (RestClientException e) {
-            logger.error("Error al comunicarse con Gemma/Gemini: {}", e.getMessage(), e);
+            logger.error("Error al comunicarse con Gemma/Gemini: {}", e.getMessage());
+            if (e instanceof org.springframework.web.client.HttpStatusCodeException httpException) {
+                logger.error("Detalle del error (Response Body): {}", httpException.getResponseBodyAsString());
+            }
             return "Lo siento, hubo un problema al procesar tu mensaje. ¿Puedes intentarlo de nuevo?";
         }
 
