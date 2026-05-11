@@ -6,11 +6,7 @@ import com.psico.app.patterns.strategy.EstrategiaEmocion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * GeneradorRespuesta
- * Combina el mensaje del usuario + emoción detectada
- * para construir el contexto completo que se enviará a Gemma 4.
- */
+
 @Component
 @RequiredArgsConstructor
 public class GeneradorRespuesta {
@@ -20,10 +16,23 @@ public class GeneradorRespuesta {
     public String construirPromptSistema(TipoEmocion emocion, String personalidadBase) {
         EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
         String instruccionesEmocion = estrategia.obtenerInstruccionesSistema();
-        
-        return String.format("%s\n\nContexto de Personalidad Adicional:\n%s\n\nREGLA DE FORMATO ESTRICTA Y OBLIGATORIA: Tu respuesta DEBE ser ÚNICAMENTE un objeto JSON. NO escribas texto antes ni después. NO escribas tu proceso de pensamiento ni frases en inglés como 'Let's go with...'. Tu salida debe ser EXACTAMENTE así: {\"respuesta\": \"tu mensaje final aquí\"}", 
-                instruccionesEmocion, 
-                personalidadBase != null ? personalidadBase : "Eres un profesional empático.");
+
+        String reglasOutput = """
+
+                ===INSTRUCCIONES DE FORMATO - OBLIGATORIAS===
+                - Responde ÚNICAMENTE con el mensaje para el usuario. Nada más.
+                - PROHIBIDO escribir en inglés. Solo español.
+                - PROHIBIDO razonar antes de responder (no escribas "Let's", "I'll", "Okay", "The user", etc.)
+                - PROHIBIDO mostrar opciones, variantes ni comparaciones ("Option 1", "Version A", etc.)
+                - PROHIBIDO usar asteriscos (*), guiones (-) ni numeración para analizar.
+                - NO repitas la respuesta dos veces.
+                - NO uses comillas alrededor de tu respuesta.
+                - Tu respuesta debe ser directa, empática, máximo 3 oraciones en español.
+                =============================================
+                """;
+
+        return instruccionesEmocion + reglasOutput +
+               "\nPersonalidad: " + (personalidadBase != null ? personalidadBase : "Eres un profesional empático.");
     }
 
     public String construirMensajeUsuario(String mensajeOriginal, TipoEmocion emocion, String memoriaUsuario) {

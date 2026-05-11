@@ -64,37 +64,67 @@ public class ServicioIA {
 
     private String limpiarRespuesta(String texto) {
         if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
-        
+
         String resultado = texto.trim();
 
-        // 1. Extraer del JSON forzado {"respuesta": "..."}
-        java.util.regex.Matcher jsonMatcher = java.util.regex.Pattern.compile("(?is).*\"respuesta\"\\s*:\\s*\"(.*?)\".*").matcher(resultado);
-        if (jsonMatcher.matches()) {
-            return jsonMatcher.group(1).trim();
+        // ── ESTRATEGIA 1 ─────────────────────────────────────────────────────────
+        // Gemma a veces razona en inglés y luego pone la respuesta entre comillas:
+        // "Let's go with X. \"Respuesta.\" \"Respuesta duplicada.\""
+        // Tomamos la ÚLTIMA cadena entre comillas dobles del texto — es la versión final.
+        java.util.regex.Pattern pComillas = java.util.regex.Pattern.compile("\"([^\"]{10,})\"");
+        java.util.regex.Matcher mComillas = pComillas.matcher(resultado);
+        String ultimaComilla = null;
+        while (mComillas.find()) {
+            ultimaComilla = mComillas.group(1).trim();
+        }
+        if (ultimaComilla != null && !ultimaComilla.isBlank()) {
+            return ultimaComilla;
         }
 
-        // 2. Si la IA desobedece el JSON y escupe "Let's go with..." y luego pone comillas
-        // Busca el texto más largo dentro de las últimas comillas
-        java.util.regex.Matcher quotesMatcher = java.util.regex.Pattern.compile("(?s).*\"([^\"]+)\"\\s*[^\"a-zA-Z]*$").matcher(resultado);
-        if (quotesMatcher.matches()) {
-            return quotesMatcher.group(1).trim();
+        // ── ESTRATEGIA 2 ─────────────────────────────────────────────────────────
+        // Marcadores explícitos de respuesta final
+        String lower = resultado.toLowerCase();
+        String[] marcadores = {
+            "selected response:", "respuesta final:", "respuesta:",
+            "final response:", "my response:", "here is my response:"
+        };
+        for (String marcador : marcadores) {
+            int idx = lower.lastIndexOf(marcador);
+            if (idx >= 0) {
+                String tras = resultado.substring(idx + marcador.length()).trim();
+                tras = tras.replaceAll("^\"|\"$", "").trim();
+                if (!tras.isBlank()) return tras;
+            }
         }
-        
-        // 3. Fallback: Limpieza muy agresiva por si falla lo anterior
+
+        // ── ESTRATEGIA 3 ─────────────────────────────────────────────────────────
+        // Filtrar línea a línea: descartar razonamiento en inglés y meta-comentarios
         String[] lineas = resultado.split("\n");
         StringBuilder sb = new StringBuilder();
+
         for (String linea : lineas) {
             String t = linea.trim();
             if (t.isEmpty()) continue;
+
+            // Descartar razonamiento meta en inglés
+            if (t.toLowerCase().matches("^(let'?s|okay|ok,|i('ll| will| need| should| want)|here'?s|now,|so,|alright|first,|the user|this is|i think|we need|my response|note:|step \\d|option \\d).*")) continue;
+            // Descartar listas y bullets
             if (t.startsWith("* ") || t.startsWith("- ") || t.startsWith("**")) continue;
-            if (t.toLowerCase().matches("^(user says|instruction|goal:|option|let's go with).*")) continue;
+            if (t.matches("^\\d+\\.\\s.*")) continue;
+            // Descartar etiquetas entre corchetes
+            if (t.matches("^\\[.*\\]$")) continue;
+            // Descartar líneas de instrucción/contexto en español
+            if (t.toLowerCase().matches("^(goal:|constraints:|el usuario dijo|instrucción \\d|contexto:|tono:|brevedad:).*")) continue;
+
             sb.append(t).append(" ");
         }
-        
+
         resultado = sb.toString().trim();
-        resultado = resultado.replaceAll("^\\*+|\\*+$", "").replaceAll("^\"|\"$", "").trim();
-        
-        return resultado.isEmpty() ? "Hola, estoy aquí para escucharte." : resultado;
+        // Quitar comillas y asteriscos sobrantes de los extremos
+        resultado = resultado.replaceAll("^[\"*]+|[\"*]+$", "").trim();
+
+        if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
+        return resultado;
     }
 
     @Transactional
