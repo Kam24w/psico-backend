@@ -33,7 +33,7 @@ public class EmocionService {
                 .tipo(tipo)
                 .intensidad(intensidad)
                 .usuario(usuario)
-                .build());
+                .build();
 
         Emocion guardada = emocionRepository.save(emocion);
 

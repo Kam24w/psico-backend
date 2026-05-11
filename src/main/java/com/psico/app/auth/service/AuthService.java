@@ -1,7 +1,5 @@
 package com.psico.app.auth.service;
 
-import java.util.Objects;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -105,7 +103,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .rol(Rol.USER)
-                .build());
+                .build();
 
         usuarioRepository.save(usuario);
         String token = jwtUtil.generarToken(usuario.getEmail());
