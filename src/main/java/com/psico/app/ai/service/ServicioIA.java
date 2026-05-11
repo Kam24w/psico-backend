@@ -57,8 +57,36 @@ public class ServicioIA {
         String systemPrompt = generadorRespuesta.construirPromptSistema(emocion, personalidadPrompt);
         String userMessage  = generadorRespuesta.construirMensajeUsuario(mensajeUsuario, emocion, memoriaContexto);
 
-        // 5. Llamar a Gemma 4
-        return clienteIA.enviarMensaje(systemPrompt, userMessage);
+        // 5. Llamar a Gemma 4 y limpiar la respuesta
+        String respuestaCruda = clienteIA.enviarMensaje(systemPrompt, userMessage);
+        return limpiarRespuesta(respuestaCruda);
+    }
+
+    private String limpiarRespuesta(String texto) {
+        if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
+        
+        String[] lineas = texto.split("\n");
+        StringBuilder sb = new StringBuilder();
+        
+        for (String linea : lineas) {
+            String t = linea.trim();
+            if (t.isEmpty()) continue;
+            
+            // Filtros para descartar líneas de razonamiento interno de la IA
+            if (t.startsWith("* ") || t.startsWith("- ")) continue;
+            if (t.toLowerCase().matches("^(user says|instruction \\d|el usuario dijo|goal:|constraints:|option \\d:).*")) continue;
+            if (t.toLowerCase().matches("^(brief\\?|spanish\\?|step \\d|paso \\d).*")) continue;
+            if (t.matches("^\\d+\\.\\s.*")) continue;
+            if (t.matches("^\\[.*\\]$")) continue;
+            
+            // Remover comillas residuales que la IA pueda dejar al inicio o final
+            t = t.replaceAll("^\"|\"$", "").trim();
+            
+            sb.append(t).append(" ");
+        }
+        
+        String resultado = sb.toString().trim();
+        return resultado.isEmpty() ? texto.trim() : resultado;
     }
 
     @Transactional
