@@ -3,6 +3,7 @@ package com.psico.app.conversation.model;
 import com.psico.app.emotion.model.TipoEmocion;
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
@@ -28,6 +29,7 @@ public class Mensaje {
     @Column(name = "emocion_asociada")
     private TipoEmocion emocionAsociada;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversacion_id", nullable = false)
     private Conversacion conversacion;
