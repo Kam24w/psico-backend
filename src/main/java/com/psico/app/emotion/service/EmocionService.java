@@ -1,20 +1,18 @@
 package com.psico.app.emotion.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.psico.app.auth.model.Usuario;
-import com.psico.app.common.exception.ValidationException;
 import com.psico.app.emotion.model.Emocion;
 import com.psico.app.emotion.model.TipoEmocion;
 import com.psico.app.emotion.repository.EmocionRepository;
-import com.psico.app.emotion.validator.EmotionValidator;
 import com.psico.app.patterns.observer.NotificadorEmocion;
 import com.psico.app.user.service.UsuarioService;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -24,7 +22,6 @@ public class EmocionService {
     private final EmocionRepository emocionRepository;
     private final UsuarioService usuarioService;
     private final NotificadorEmocion notificadorEmocion;
-    private final EmotionValidator emotionValidator;
 
     public Emocion registrarEmocion(Long usuarioId, TipoEmocion tipo, Double intensidad) {
         Usuario usuario = usuarioService.buscarPorId(usuarioId);
