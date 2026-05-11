@@ -65,28 +65,49 @@ public class ServicioIA {
     private String limpiarRespuesta(String texto) {
         if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
         
-        String[] lineas = texto.split("\n");
+        String resultado = texto.trim();
+
+        // 1. Extraer agresivamente si la IA usa "Selected response:" o "Option X:" al final
+        String lowerText = resultado.toLowerCase();
+        if (lowerText.contains("selected response:")) {
+            int idx = lowerText.lastIndexOf("selected response:");
+            resultado = resultado.substring(idx + "selected response:".length()).trim();
+        } else if (lowerText.contains("respuesta final:")) {
+            int idx = lowerText.lastIndexOf("respuesta final:");
+            resultado = resultado.substring(idx + "respuesta final:".length()).trim();
+        }
+
+        // 2. Limpiar por líneas para quitar el razonamiento que quede
+        String[] lineas = resultado.split("\n");
         StringBuilder sb = new StringBuilder();
         
         for (String linea : lineas) {
             String t = linea.trim();
             if (t.isEmpty()) continue;
             
-            // Filtros para descartar líneas de razonamiento interno de la IA
-            if (t.startsWith("* ") || t.startsWith("- ")) continue;
+            // Filtros agresivos
+            if (t.startsWith("* ") || t.startsWith("- ") || t.startsWith("**")) continue;
             if (t.toLowerCase().matches("^(user says|instruction \\d|el usuario dijo|goal:|constraints:|option \\d:).*")) continue;
             if (t.toLowerCase().matches("^(brief\\?|spanish\\?|step \\d|paso \\d).*")) continue;
             if (t.matches("^\\d+\\.\\s.*")) continue;
             if (t.matches("^\\[.*\\]$")) continue;
             
-            // Remover comillas residuales que la IA pueda dejar al inicio o final
-            t = t.replaceAll("^\"|\"$", "").trim();
-            
             sb.append(t).append(" ");
         }
         
-        String resultado = sb.toString().trim();
-        return resultado.isEmpty() ? texto.trim() : resultado;
+        resultado = sb.toString().trim();
+
+        // 3. Quitar asteriscos y comillas que puedan quedar atrapando el texto
+        resultado = resultado.replaceAll("^\\*+|\\*+$", "").trim(); // Quitar * sueltos a los lados
+        resultado = resultado.replaceAll("^\"|\"$", "").trim();     // Quitar comillas a los lados
+        
+        // Si por ser tan agresivos borramos todo, devolvemos un texto por defecto pero limpio
+        if (resultado.isEmpty()) {
+            resultado = texto.replaceAll("^\\*.*\\*\\s*", "").replaceAll("^\"|\"$", "").trim();
+            if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
+        }
+        
+        return resultado;
     }
 
     @Transactional
