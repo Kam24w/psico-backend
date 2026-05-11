@@ -1,5 +1,7 @@
 package com.psico.app.auth.service;
 
+import java.util.Objects;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -98,32 +100,16 @@ public class AuthService {
             );
         }
 
-        // 3. Crear usuario
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .rol(Rol.USER)
-                .build();
+                .build());
 
-        // 4. Guardar usuario
-        try {
-            usuarioRepository.save(usuario);
-        } catch (Exception e) {
-            log.error("Error saving user: {}", request.getEmail());
+        usuarioRepository.save(usuario);
+        String token = jwtUtil.generarToken(usuario.getEmail());
 
-            throw new ValidationException(
-                    "REGISTER_ERROR",
-                    "Error al registrar el usuario"
-            );
-        }
-
-        // 5. Generar token
-        String token = generateToken(usuario);
-
-        log.info("User registered successfully: {}", usuario.getEmail());
-
-        // 6. Respuesta
         return AuthResponse.builder()
                 .token(token)
                 .usuarioId(usuario.getId())
