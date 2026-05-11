@@ -67,7 +67,14 @@ public class ServicioIA {
         
         String resultado = texto.trim();
 
-        // 1. Extraer agresivamente si la IA usa "Selected response:" o "Option X:" al final
+        // 1. Estrategia principal para este modelo Gemma específico: 
+        // Extraer el texto final que suele poner entre comillas cerca del final: * "Respuesta..." *
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?s).*\\*\\s*\"([^\"]+)\"\\s*\\*.*").matcher(resultado);
+        if (m.matches()) {
+            return m.group(1).trim();
+        }
+
+        // 2. Estrategia de respaldo: Extraer si usa "Selected response:" o "Option X:" al final
         String lowerText = resultado.toLowerCase();
         if (lowerText.contains("selected response:")) {
             int idx = lowerText.lastIndexOf("selected response:");
@@ -77,7 +84,7 @@ public class ServicioIA {
             resultado = resultado.substring(idx + "respuesta final:".length()).trim();
         }
 
-        // 2. Limpiar por líneas para quitar el razonamiento que quede
+        // 3. Limpiar por líneas para quitar el razonamiento que quede
         String[] lineas = resultado.split("\n");
         StringBuilder sb = new StringBuilder();
         
