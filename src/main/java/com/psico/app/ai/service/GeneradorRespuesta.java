@@ -6,7 +6,10 @@ import com.psico.app.patterns.strategy.EstrategiaEmocion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-
+/**
+ * GeneradorRespuesta
+ * Construye los prompts optimizados para Gemma 4.
+ */
 @Component
 @RequiredArgsConstructor
 public class GeneradorRespuesta {
@@ -16,33 +19,37 @@ public class GeneradorRespuesta {
     public String construirPromptSistema(TipoEmocion emocion, String personalidadBase) {
         EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
         String instruccionesEmocion = estrategia.obtenerInstruccionesSistema();
+        String personalidad = personalidadBase != null ? personalidadBase : "Eres un profesional empático.";
 
-        String reglasOutput = """
-
-                ===INSTRUCCIONES DE FORMATO - OBLIGATORIAS===
-                - Responde ÚNICAMENTE con el mensaje para el usuario. Nada más.
-                - PROHIBIDO escribir en inglés. Solo español.
-                - PROHIBIDO razonar antes de responder (no escribas "Let's", "I'll", "Okay", "The user", etc.)
-                - PROHIBIDO mostrar opciones, variantes ni comparaciones ("Option 1", "Version A", etc.)
-                - PROHIBIDO usar asteriscos (*), guiones (-) ni numeración para analizar.
-                - NO repitas la respuesta dos veces.
-                - NO uses comillas alrededor de tu respuesta.
-                - Tu respuesta debe ser directa, empática, máximo 3 oraciones en español.
-                =============================================
-                """;
-
-        return instruccionesEmocion + reglasOutput +
-               "\nPersonalidad: " + (personalidadBase != null ? personalidadBase : "Eres un profesional empático.");
+        return personalidad + "\n\n" + instruccionesEmocion + """
+            
+            === REGLAS ESTRÍCTAS DE FORMATO ===
+            - Responde ÚNICAMENTE con el mensaje directo para el usuario.
+            - PROHIBIDO razonar antes de responder (no escribas "Let's", "I'll", "Draft", etc.)
+            - PROHIBIDO usar asteriscos (*), guiones (-) o numeración para analizar.
+            - Tu respuesta debe ser natural, en español y máximo de 3 oraciones.
+            """;
     }
 
     public String construirMensajeUsuario(String mensajeOriginal, TipoEmocion emocion, String memoriaUsuario) {
         EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
-        String mensajeContextualizado = estrategia.generarContexto(mensajeOriginal);
-        
+
+        String ejemplos = """
+                Ejemplos de respuesta esperada:
+                Usuario: me siento muy cansado hoy
+                Respuesta: Es completamente válido sentirse así. ¿Quieres contarme qué ha pasado hoy?
+
+                Usuario: hola
+                Respuesta: ¡Hola! Me alegra que estés aquí. ¿Cómo te encuentras hoy?
+
+                Ahora responde al siguiente mensaje:
+                """;
+
+        String contextoEmocion = estrategia.generarContexto(mensajeOriginal);
+
         if (memoriaUsuario != null && !memoriaUsuario.isBlank()) {
-            return String.format("Memoria relevante del usuario:\n%s\n\nMensaje actual:\n%s", 
-                    memoriaUsuario, mensajeContextualizado);
+            return ejemplos + "Contexto previo:\n" + memoriaUsuario + "\n\nMensaje: " + contextoEmocion;
         }
-        return mensajeContextualizado;
+        return ejemplos + "Mensaje: " + contextoEmocion;
     }
 }

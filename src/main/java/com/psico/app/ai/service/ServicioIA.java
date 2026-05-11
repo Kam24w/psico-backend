@@ -67,7 +67,32 @@ public class ServicioIA {
 
         String resultado = texto.trim();
 
-        // ── ESTRATEGIA 1 ─────────────────────────────────────────────────────────
+        // ── ESTRATEGIA 0 ─────────────────────────────────────────────────────────
+        // Gemma a veces devuelve todo su razonamiento interno visible:
+        // "* User Emotional State: ... * Goal: ... * Draft 1: ... * Draft 2: ..."
+        // Detectamos si hay borradores (Draft) y extraemos el último.
+        java.util.regex.Pattern pDraft = java.util.regex.Pattern.compile(
+            "\\*\\s*Draft\\s*\\d+[:\\*]\\s*([^*]+?)(?=\\s*\\*\\s*(?:Draft|Spanish|$))",
+            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.DOTALL
+        );
+        java.util.regex.Matcher mDraft = pDraft.matcher(resultado);
+        String ultimoDraft = null;
+        while (mDraft.find()) {
+            String candidato = mDraft.group(1).trim();
+            if (candidato.length() > 10) ultimoDraft = candidato;
+        }
+        if (ultimoDraft != null) {
+            return ultimoDraft.replaceAll("^[\"*]+|[\"*]+$", "").trim();
+        }
+
+        // Auto-evaluación tipo checklist: "* Spanish? Yes. * Max 3..."
+        String primeraLinea = resultado.split("\n")[0].toLowerCase();
+        boolean esChecklist = primeraLinea.matches(".*\\b(spanish|sentences|empathetic|direct|quotes|asterisks|user emotional|goal:|constraints).*");
+        if (esChecklist) {
+            return "Hola, estoy aquí para escucharte. ¿Cómo te sientes en este momento?";
+        }
+
+
         // Gemma a veces razona en inglés y luego pone la respuesta entre comillas:
         // "Let's go with X. \"Respuesta.\" \"Respuesta duplicada.\""
         // Tomamos la ÚLTIMA cadena entre comillas dobles del texto — es la versión final.
