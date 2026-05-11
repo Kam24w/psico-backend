@@ -21,7 +21,7 @@ public class GeneradorRespuesta {
         EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
         String instruccionesEmocion = estrategia.obtenerInstruccionesSistema();
         
-        return String.format("%s\n\nContexto de Personalidad Adicional:\n%s\n\nREGLA ESTRICTA: Responde SOLO con el mensaje directo y empático para el usuario. NO incluyas tu proceso de pensamiento, NO uses asteriscos (*) para analizar el estado del usuario, y NO ofrezcas 'Option 1', 'Goal' ni viñetas internas. Dame únicamente la respuesta final limpia y natural.", 
+        return String.format("%s\n\nContexto de Personalidad Adicional:\n%s\n\nREGLA DE FORMATO ESTRICTA Y OBLIGATORIA: Tu respuesta DEBE ser ÚNICAMENTE un objeto JSON. NO escribas texto antes ni después. NO escribas tu proceso de pensamiento ni frases en inglés como 'Let's go with...'. Tu salida debe ser EXACTAMENTE así: {\"respuesta\": \"tu mensaje final aquí\"}", 
                 instruccionesEmocion, 
                 personalidadBase != null ? personalidadBase : "Eres un profesional empático.");
     }

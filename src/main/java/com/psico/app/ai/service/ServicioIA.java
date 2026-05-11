@@ -67,54 +67,34 @@ public class ServicioIA {
         
         String resultado = texto.trim();
 
-        // 1. Estrategia principal para este modelo Gemma específico: 
-        // Extraer el texto final que suele poner entre comillas cerca del final: * "Respuesta..." *
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?s).*\\*\\s*\"([^\"]+)\"\\s*\\*.*").matcher(resultado);
-        if (m.matches()) {
-            return m.group(1).trim();
+        // 1. Extraer del JSON forzado {"respuesta": "..."}
+        java.util.regex.Matcher jsonMatcher = java.util.regex.Pattern.compile("(?is).*\"respuesta\"\\s*:\\s*\"(.*?)\".*").matcher(resultado);
+        if (jsonMatcher.matches()) {
+            return jsonMatcher.group(1).trim();
         }
 
-        // 2. Estrategia de respaldo: Extraer si usa "Selected response:" o "Option X:" al final
-        String lowerText = resultado.toLowerCase();
-        if (lowerText.contains("selected response:")) {
-            int idx = lowerText.lastIndexOf("selected response:");
-            resultado = resultado.substring(idx + "selected response:".length()).trim();
-        } else if (lowerText.contains("respuesta final:")) {
-            int idx = lowerText.lastIndexOf("respuesta final:");
-            resultado = resultado.substring(idx + "respuesta final:".length()).trim();
+        // 2. Si la IA desobedece el JSON y escupe "Let's go with..." y luego pone comillas
+        // Busca el texto más largo dentro de las últimas comillas
+        java.util.regex.Matcher quotesMatcher = java.util.regex.Pattern.compile("(?s).*\"([^\"]+)\"\\s*[^\"a-zA-Z]*$").matcher(resultado);
+        if (quotesMatcher.matches()) {
+            return quotesMatcher.group(1).trim();
         }
-
-        // 3. Limpiar por líneas para quitar el razonamiento que quede
+        
+        // 3. Fallback: Limpieza muy agresiva por si falla lo anterior
         String[] lineas = resultado.split("\n");
         StringBuilder sb = new StringBuilder();
-        
         for (String linea : lineas) {
             String t = linea.trim();
             if (t.isEmpty()) continue;
-            
-            // Filtros agresivos
             if (t.startsWith("* ") || t.startsWith("- ") || t.startsWith("**")) continue;
-            if (t.toLowerCase().matches("^(user says|instruction \\d|el usuario dijo|goal:|constraints:|option \\d:).*")) continue;
-            if (t.toLowerCase().matches("^(brief\\?|spanish\\?|step \\d|paso \\d).*")) continue;
-            if (t.matches("^\\d+\\.\\s.*")) continue;
-            if (t.matches("^\\[.*\\]$")) continue;
-            
+            if (t.toLowerCase().matches("^(user says|instruction|goal:|option|let's go with).*")) continue;
             sb.append(t).append(" ");
         }
         
         resultado = sb.toString().trim();
-
-        // 3. Quitar asteriscos y comillas que puedan quedar atrapando el texto
-        resultado = resultado.replaceAll("^\\*+|\\*+$", "").trim(); // Quitar * sueltos a los lados
-        resultado = resultado.replaceAll("^\"|\"$", "").trim();     // Quitar comillas a los lados
+        resultado = resultado.replaceAll("^\\*+|\\*+$", "").replaceAll("^\"|\"$", "").trim();
         
-        // Si por ser tan agresivos borramos todo, devolvemos un texto por defecto pero limpio
-        if (resultado.isEmpty()) {
-            resultado = texto.replaceAll("^\\*.*\\*\\s*", "").replaceAll("^\"|\"$", "").trim();
-            if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
-        }
-        
-        return resultado;
+        return resultado.isEmpty() ? "Hola, estoy aquí para escucharte." : resultado;
     }
 
     @Transactional
