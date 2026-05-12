@@ -1,6 +1,6 @@
 package com.psico.app.ai.model;
 
-import com.psico.app.conversation.model.Mensaje;
+import com.psico.app.conversation.model.Message;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +17,7 @@ public class FeedbackRespuesta {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mensaje_id", nullable = false)
-    private Mensaje mensaje;
+    private Message mensaje;
 
     @Column(nullable = false)
     private Integer puntuacion; // 1-5 o pulgar arriba/abajo

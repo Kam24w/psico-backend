@@ -1,10 +1,5 @@
 package com.psico.app.patterns.strategy;
 
-/**
- * PATRÓN STRATEGY
- * Define el comportamiento de respuesta según la emoción detectada.
- * Cada implementación adapta el tono y contexto del prompt enviado a Claude.
- */
 public interface EstrategiaEmocion {
     /**
      * Genera el contexto emocional que se añadirá al prompt de la IA.

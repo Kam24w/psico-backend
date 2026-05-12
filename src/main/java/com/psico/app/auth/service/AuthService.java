@@ -11,14 +11,14 @@ import com.psico.app.auth.dto.AuthDTOs.AuthResponse;
 import com.psico.app.auth.dto.AuthDTOs.LoginRequest;
 import com.psico.app.auth.dto.AuthDTOs.RegisterRequest;
 import com.psico.app.auth.model.Rol;
-import com.psico.app.auth.model.Usuario;
+import com.psico.app.auth.model.User;
 import com.psico.app.auth.security.JwtUtil;
 import com.psico.app.auth.validator.LoginValidator;
 import com.psico.app.auth.validator.UserValidator;
 import com.psico.app.common.exception.EmailAlreadyExistsException;
 import com.psico.app.common.exception.UserNotFoundException;
 import com.psico.app.common.exception.ValidationException;
-import com.psico.app.user.repository.UsuarioRepository;
+import com.psico.app.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UsuarioRepository usuarioRepository;
+        private final UserRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -61,7 +61,7 @@ public class AuthService {
         }
 
         // 3. Buscar usuario
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+        User usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException(
                         "USER_NOT_FOUND",
                         "Usuario no encontrado"
@@ -98,7 +98,7 @@ public class AuthService {
             );
         }
 
-        Usuario usuario = Usuario.builder()
+        User usuario = User.builder()
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -118,7 +118,7 @@ public class AuthService {
     }
 
     // ===================== UTIL =====================
-    private String generateToken(Usuario usuario) {
+        private String generateToken(User usuario) {
         return jwtUtil.generarToken(usuario.getEmail());
     }
 }
