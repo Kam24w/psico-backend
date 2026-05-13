@@ -1,14 +1,16 @@
 package com.psico.app.conversation.service;
 
-import com.psico.app.conversation.model.Conversacion;
-import com.psico.app.conversation.model.Mensaje;
+import com.psico.app.conversation.model.Conversation;
+import com.psico.app.conversation.model.Message;
 import com.psico.app.conversation.repository.ConversacionRepository;
 import com.psico.app.conversation.repository.MensajeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * HistorialConversacion
@@ -21,19 +23,19 @@ public class HistorialConversacion {
     private final ConversacionRepository conversacionRepository;
     private final MensajeRepository mensajeRepository;
 
-    public List<Conversacion> obtenerTodasLasConversaciones(Long usuarioId) {
+    public List<Conversation> obtenerTodasLasConversaciones(@NonNull Long usuarioId) {
         return conversacionRepository.findByUsuarioIdOrderByUpdatedAtDesc(usuarioId);
     }
 
-    public List<Mensaje> obtenerMensajesDeConversacion(Long conversacionId) {
-        return mensajeRepository.findByConversacionIdOrderByFechaAsc(conversacionId);
+    public List<Message> obtenerMensajesDeConversacion(@NonNull Long conversacionId) {
+        return mensajeRepository.findByConversationIdOrderByFechaAsc(conversacionId);
     }
 
     @Transactional
-    public void cerrarConversacion(Long conversacionId) {
+    public void cerrarConversacion(@NonNull Long conversacionId) {
         conversacionRepository.findById(conversacionId).ifPresent(conv -> {
             conv.setActiva(false);
-            conversacionRepository.save(conv);
+            conversacionRepository.save(Objects.requireNonNull(conv));
         });
     }
 }

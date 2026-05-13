@@ -1,5 +1,7 @@
 package com.psico.app.ai.service;
 
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,7 +10,7 @@ import com.psico.app.ai.model.AlertaSeguridad;
 import com.psico.app.ai.repository.AlertaSeguridadRepository;
 import com.psico.app.ai.repository.MemoriaContextoRepository;
 import com.psico.app.ai.repository.PersonalidadIARepository;
-import com.psico.app.auth.model.Usuario;
+import com.psico.app.auth.model.User;
 import com.psico.app.emotion.model.TipoEmocion;
 
 import jakarta.persistence.EntityManager;
@@ -34,11 +36,10 @@ public class ServicioIA {
     private final MemoriaContextoRepository memoriaRepository;
     private final EntityManager entityManager;
 
-    public String generarRespuesta(Long usuarioId, String mensajeUsuario, TipoEmocion emocion) {
-        log.info("Generando respuesta para usuario {} con emoción: {}", usuarioId, emocion);
+    public String generateResponse(Long userId, String userMessage, TipoEmocion emotion) {
+        log.info("Generating response for user {} with emotion {}", userId, emotion);
 
-        // 1. Verificar Seguridad (Risk Detection)
-        detectarRiesgos(usuarioId, mensajeUsuario);
+        detectRisks(userId, userMessage);
 
         // 2. Obtener Personalidad Activa
         String personalidadPrompt = personalidadRepository.findByActivaTrue()
@@ -46,22 +47,76 @@ public class ServicioIA {
                 .orElse("Eres un asistente psicológico virtual altamente empático.");
 
         // 3. Obtener Memoria Reciente
-        String memoriaContexto = memoriaRepository.findByUsuarioId(usuarioId).stream()
+        String memoryContext = memoriaRepository.findByUsuarioId(userId).stream()
                 .limit(5)
                 .map(m -> m.getClave() + ": " + m.getValor())
                 .reduce("", (a, b) -> a + "\n" + b);
 
-        // 4. Construir Prompts
-        String systemPrompt = generadorRespuesta.construirPromptSistema(emocion, personalidadPrompt);
-        String userMessage  = generadorRespuesta.construirMensajeUsuario(mensajeUsuario, emocion, memoriaContexto);
+        String systemPrompt = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
+        String finalUserMessage = generadorRespuesta.buildUserMessage(userMessage, emotion, memoryContext);
 
-        // 5. Llamar a Gemma 4
-        return clienteIA.enviarMensaje(systemPrompt, userMessage);
+        String rawResponse = clienteIA.enviarMensaje(systemPrompt, finalUserMessage);
+        return cleanResponse(rawResponse);
+    }
+
+    private String cleanResponse(String texto) {
+        if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
+        
+        String resultado = texto.trim();
+
+        // 1. Estrategia principal para este modelo Gemma específico: 
+        // Extraer el texto final que suele poner entre comillas cerca del final: * "Respuesta..." *
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?s).*\\*\\s*\"([^\"]+)\"\\s*\\*.*").matcher(resultado);
+        if (m.matches()) {
+            return m.group(1).trim();
+        }
+
+        // 2. Estrategia de respaldo: Extraer si usa "Selected response:" o "Option X:" al final
+        String lowerText = resultado.toLowerCase();
+        if (lowerText.contains("selected response:")) {
+            int idx = lowerText.lastIndexOf("selected response:");
+            resultado = resultado.substring(idx + "selected response:".length()).trim();
+        } else if (lowerText.contains("respuesta final:")) {
+            int idx = lowerText.lastIndexOf("respuesta final:");
+            resultado = resultado.substring(idx + "respuesta final:".length()).trim();
+        }
+
+        // 3. Limpiar por líneas para quitar el razonamiento que quede
+        String[] lineas = resultado.split("\n");
+        StringBuilder sb = new StringBuilder();
+        
+        for (String linea : lineas) {
+            String t = linea.trim();
+            if (t.isEmpty()) continue;
+            
+            // Filtros agresivos
+            if (t.startsWith("* ") || t.startsWith("- ") || t.startsWith("**")) continue;
+            if (t.toLowerCase().matches("^(user says|instruction \\d|el usuario dijo|goal:|constraints:|option \\d:).*")) continue;
+            if (t.toLowerCase().matches("^(brief\\?|spanish\\?|step \\d|paso \\d).*")) continue;
+            if (t.matches("^\\d+\\.\\s.*")) continue;
+            if (t.matches("^\\[.*\\]$")) continue;
+            
+            sb.append(t).append(" ");
+        }
+        
+        resultado = sb.toString().trim();
+
+        // 3. Quitar asteriscos y comillas que puedan quedar atrapando el texto
+        resultado = resultado.replaceAll("^\\*+|\\*+$", "").trim(); // Quitar * sueltos a los lados
+        resultado = resultado.replaceAll("^\"|\"$", "").trim();     // Quitar comillas a los lados
+        
+        // Si por ser tan agresivos borramos todo, devolvemos un texto por defecto pero limpio
+        if (resultado.isEmpty()) {
+            resultado = texto.replaceAll("^\\*.*\\*\\s*", "").replaceAll("^\"|\"$", "").trim();
+            if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
+        }
+        
+        return resultado;
     }
 
     @Transactional
-    private void detectarRiesgos(Long usuarioId, String mensaje) {
-        String lower = mensaje.toLowerCase();
+    public void detectRisks(Long userId, String message) {
+        String lower = message.toLowerCase();
 
         int nivelRiesgo = 0;
         String tipo = null;
@@ -88,19 +143,20 @@ public class ServicioIA {
 
         if (tipo != null) {
             // Referencia segura a entidad existente (sin cargar todos sus campos)
-            Usuario usuarioRef = entityManager.getReference(Usuario.class, usuarioId);
+            User usuarioRef = entityManager.getReference(User.class, userId);
 
             // Truncar fragmento a 500 chars para evitar problemas de columna
-            String fragmento = mensaje.length() > 500 ? mensaje.substring(0, 500) : mensaje;
+            String fragmento = message.length() > 500 ? message.substring(0, 500) : message;
 
-            alertaRepository.save(AlertaSeguridad.builder()
+            AlertaSeguridad alerta = AlertaSeguridad.builder()
                     .usuario(usuarioRef)
                     .tipo(tipo)
                     .nivelRiesgo(nivelRiesgo)
                     .fragmentoDetectado(fragmento)
-                    .build());
+                    .build();
+            alertaRepository.save(Objects.requireNonNull(alerta));
 
-            log.warn("¡ALERTA DE SEGURIDAD [{}] nivel {} detectada para usuario {}!", tipo, nivelRiesgo, usuarioId);
+            log.warn("Security alert [{}] level {} detected for user {}", tipo, nivelRiesgo, userId);
         }
-    }
+}
 }

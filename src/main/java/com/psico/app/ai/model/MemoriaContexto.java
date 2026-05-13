@@ -1,6 +1,6 @@
 package com.psico.app.ai.model;
 
-import com.psico.app.auth.model.Usuario;
+import com.psico.app.auth.model.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ public class MemoriaContexto {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    private User usuario;
 
     @Column(columnDefinition = "TEXT")
     private String clave;
