@@ -10,11 +10,11 @@ public class LoginValidator {
 
     public void validate(LoginRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
-            throw new ValidationException("VALIDATION_ERROR", "El email es obligatorio");
+            throw new ValidationException("VALIDATION_ERROR", "Email is required");
         }
 
         if (request.getPassword() == null || request.getPassword().isBlank()) {
-            throw new ValidationException("VALIDATION_ERROR", "La contraseña es obligatoria");
+            throw new ValidationException("VALIDATION_ERROR", "Password is required");
         }
     }
 }
