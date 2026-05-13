@@ -56,7 +56,7 @@ public class AuthService {
 
             throw new ValidationException(
                     "INVALID_CREDENTIALS",
-                    "Credenciales incorrectas"
+                    "Invalid credentials"
             );
         }
 
@@ -64,7 +64,7 @@ public class AuthService {
         User usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException(
                         "USER_NOT_FOUND",
-                        "Usuario no encontrado"
+                        "User not found"
                 ));
 
         // 4. Generar token
@@ -75,8 +75,8 @@ public class AuthService {
         // 5. Respuesta
         return AuthResponse.builder()
                 .token(token)
-                .usuarioId(usuario.getId())
-                .nombre(usuario.getNombre())
+                .userId(usuario.getId())
+                .name(usuario.getNombre())
                 .email(usuario.getEmail())
                 .rol(usuario.getRol().name())
                 .build();
@@ -94,12 +94,12 @@ public class AuthService {
         if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(
                     "EMAIL_ALREADY_EXISTS",
-                    "El email ya está registrado"
+                    "Email is already registered"
             );
         }
 
         User usuario = User.builder()
-                .nombre(request.getNombre())
+                .nombre(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .rol(Rol.USER)
@@ -110,8 +110,8 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .token(token)
-                .usuarioId(usuario.getId())
-                .nombre(usuario.getNombre())
+                .userId(usuario.getId())
+                .name(usuario.getNombre())
                 .email(usuario.getEmail())
                 .rol(usuario.getRol().name())
                 .build();

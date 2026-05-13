@@ -8,7 +8,6 @@ import com.psico.app.auth.model.User;
 import com.psico.app.emotion.model.Emotion;
 import com.psico.app.emotion.model.TipoEmocion;
 import com.psico.app.emotion.repository.EmotionRepository;
-import com.psico.app.patterns.observer.NotificadorEmocion;
 import com.psico.app.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -20,11 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 public class EmotionService {
 
     private final EmotionRepository emotionRepository;
-    private final UserService usuarioService;
-    private final NotificadorEmocion notificadorEmocion;
+    private final UserService userService;
 
     public Emotion registerEmotion(Long userId, TipoEmocion emotionType, Double intensity) {
-        User user = usuarioService.getById(userId);
+        User user = userService.getById(userId);
 
         Emotion emotion = Emotion.builder()
                 .tipo(emotionType)
@@ -33,8 +31,6 @@ public class EmotionService {
                 .build();
 
         Emotion saved = emotionRepository.save(emotion);
-
-        notificadorEmocion.notificar(userId, emotionType);
 
         log.info("Emotion registered successfully for userId: {}", userId);
 
@@ -48,20 +44,5 @@ public class EmotionService {
 
     public List<Emotion> getEmotionHistory(Long userId) {
         return emotionRepository.findByUserIdOrderByDetectedAtDesc(userId);
-    }
-
-    @Deprecated(forRemoval = false)
-    public Emotion registrarEmocion(Long usuarioId, TipoEmocion tipo, Double intensidad) {
-        return registerEmotion(usuarioId, tipo, intensidad);
-    }
-
-    @Deprecated(forRemoval = false)
-    public TipoEmocion obtenerUltimaEmocion(Long usuarioId) {
-        return getLatestEmotion(usuarioId);
-    }
-
-    @Deprecated(forRemoval = false)
-    public List<Emotion> obtenerHistorial(Long usuarioId) {
-        return getEmotionHistory(usuarioId);
     }
 }

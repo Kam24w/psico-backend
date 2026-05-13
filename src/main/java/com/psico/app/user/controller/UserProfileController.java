@@ -16,7 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping({"/api/users", "/api/usuario"})
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserProfileController {
 
@@ -27,7 +27,7 @@ public class UserProfileController {
         return ResponseEntity.ok(ApiResponse.success("Profile loaded", profileService.getProfile(userId)));
     }
 
-    @PutMapping({"/{userId}/preferences", "/{userId}/preferencias"})
+    @PutMapping("/{userId}/preferences")
     public ResponseEntity<ApiResponse<UserProfileService.UserProfile>> updatePreferences(
             @PathVariable Long userId,
             @Valid @RequestBody PreferencesRequest request

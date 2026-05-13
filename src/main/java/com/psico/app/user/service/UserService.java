@@ -21,14 +21,4 @@ public class UserService {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
-
-    @Deprecated(forRemoval = false)
-    public User buscarPorEmail(@NonNull String email) {
-        return getByEmail(email);
-    }
-
-    @Deprecated(forRemoval = false)
-    public User buscarPorId(@NonNull Long id) {
-        return getById(id);
-    }
 }

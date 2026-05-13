@@ -49,16 +49,6 @@ public class UserProfileService {
         return getProfile(userId);
     }
 
-    @Deprecated(forRemoval = false)
-    public UserProfile obtenerPerfil(Long usuarioId) {
-        return getProfile(usuarioId);
-    }
-
-    @Deprecated(forRemoval = false)
-    public UserProfile actualizarPreferencias(Long usuarioId, String preferencias) {
-        return updatePreferences(usuarioId, preferencias);
-    }
-
     @lombok.Builder
     @lombok.Data
     public static class UserProfile {

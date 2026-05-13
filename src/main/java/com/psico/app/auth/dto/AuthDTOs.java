@@ -18,8 +18,8 @@ public class AuthDTOs {
 
     @Data
     public static class RegisterRequest {
-        @NotBlank(message = "El nombre es requerido")
-        private String nombre;
+        @NotBlank(message = "Name is required")
+        private String name;
 
         @Email(message = "Email inválido")
         @NotBlank(message = "El email es requerido")
@@ -35,8 +35,8 @@ public class AuthDTOs {
     @lombok.NoArgsConstructor
     public static class AuthResponse {
         private String token;
-        private Long usuarioId;
-        private String nombre;
+        private Long userId;
+        private String name;
         private String email;
         private String rol;
     }

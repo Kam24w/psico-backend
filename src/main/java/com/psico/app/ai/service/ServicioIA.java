@@ -59,11 +59,6 @@ public class ServicioIA {
         return cleanResponse(rawResponse);
     }
 
-    @Deprecated(forRemoval = false)
-    public String generarRespuesta(Long usuarioId, String mensajeUsuario, TipoEmocion emocion) {
-        return generateResponse(usuarioId, mensajeUsuario, emocion);
-    }
-
     private String cleanResponse(String texto) {
         if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
         
@@ -163,11 +158,5 @@ public class ServicioIA {
 
             log.warn("Security alert [{}] level {} detected for user {}", tipo, nivelRiesgo, userId);
         }
-    }
-
-    @Deprecated(forRemoval = false)
-    @Transactional
-    public void detectarRiesgos(Long usuarioId, String mensaje) {
-        detectRisks(usuarioId, mensaje);
-    }
+}
 }
