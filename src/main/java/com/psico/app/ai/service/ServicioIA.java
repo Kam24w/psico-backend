@@ -34,7 +34,11 @@ public class ServicioIA {
         log.info("--- START AI GENERATION ---");
         log.info("User ID: {}, Message: {}, Emotion: {}", userId, userMessage, emotion);
 
-        detectRisks(userId, userMessage);
+        // Detectar riesgo primero — el nivel determina qué modelo se usará
+        int nivelRiesgo = detectRisks(userId, userMessage);
+        if (nivelRiesgo > 0) {
+            log.warn("Nivel de riesgo {} detectado — escalando a modelo 70B", nivelRiesgo);
+        }
 
         String personalidadPrompt = personalidadRepository.findByActivaTrue()
                 .map(p -> p.getSystemPrompt())
@@ -42,21 +46,22 @@ public class ServicioIA {
 
         String memoryContext = getRecentMemory(userId);
 
-        String systemPrompt = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
+        String systemPrompt   = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
         String finalUserMessage = generadorRespuesta.buildUserMessage(userMessage, emotion, memoryContext);
 
-        log.info("FULL SYSTEM PROMPT SENT TO GEMINI:\n{}", systemPrompt);
-        log.info("FULL USER MESSAGE SENT TO GEMINI:\n{}", finalUserMessage);
+        log.info("SYSTEM PROMPT:\n{}", systemPrompt);
+        log.info("USER MESSAGE:\n{}", finalUserMessage);
 
-        String rawResponse = clienteIA.enviarMensaje(systemPrompt, finalUserMessage);
-        
-        log.info("RAW RESPONSE FROM GEMINI:\n\"{}\"", rawResponse);
+        // Pasar el nivel de riesgo: 0 → 8B rápido, >0 → 70B empático
+        String rawResponse = clienteIA.enviarMensajeConRiesgo(systemPrompt, finalUserMessage, nivelRiesgo);
+
+        log.info("RAW RESPONSE FROM GROQ:\n\"{}\"", rawResponse);
 
         String cleaned = cleanResponse(rawResponse);
-        
+
         log.info("FINAL CLEANED RESPONSE:\n\"{}\"", cleaned);
         log.info("--- END AI GENERATION ---");
-        
+
         return AiResponse.builder()
                 .raw(rawResponse)
                 .cleaned(cleaned)
@@ -65,26 +70,29 @@ public class ServicioIA {
 
     private String cleanResponse(String texto) {
         if (texto == null || texto.isBlank()) return "Hola, estoy aquí para escucharte.";
-        
-        log.info("=== GEMINI RAW (passthrough) ===\n\"{}\"", texto);
-        
-        // Sanitizer DESHABILITADO temporalmente para validar respuestas de Gemini
-        // Solo limpiar caracteres básicos
+
+        log.info("=== GROQ RAW (passthrough) ===\n\"{}\"", texto);
+
         String resultado = texto.trim()
-            .replaceAll("^\"|\"$", "") // quitar comillas externas
-            .replaceAll("\\*\\*", "")  // quitar negrita markdown
+            .replaceAll("^\"|\"$", "")
+            .replaceAll("\\*\\*", "")
             .trim();
-            
+
         if (resultado.length() < 3) {
             return "Cuéntame más, estoy escuchando.";
         }
-        
+
         return resultado;
     }
 
+    /**
+     * Detecta palabras clave de riesgo y guarda la alerta.
+     * Ahora retorna el nivelRiesgo para que generateResponse pueda
+     * elegir el modelo de IA apropiado.
+     */
     @Transactional
-    public void detectRisks(Long userId, String message) {
-        if (message == null) return;
+    public int detectRisks(Long userId, String message) {
+        if (message == null) return 0;
         String lower = message.toLowerCase();
 
         int nivelRiesgo = 0;
@@ -118,6 +126,8 @@ public class ServicioIA {
             alertaRepository.save(alerta);
             log.warn("Security alert [{}] level {} detected for user {}", tipo, nivelRiesgo, userId);
         }
+
+        return nivelRiesgo;
     }
 
     public AiResponse generateInitialGreeting(Long userId, String userName, TipoEmocion emotion) {
@@ -125,11 +135,12 @@ public class ServicioIA {
 
         String memoryContext = getRecentMemory(userId);
         String systemPrompt = "Eres un asistente psicológico empático iniciando una sesión de voz.";
-        String userMessage = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
+        String userMessage  = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
 
+        // El saludo inicial siempre usa el modelo rápido (nivelRiesgo = 0)
         String rawResponse = clienteIA.enviarMensaje(systemPrompt, userMessage);
-        log.info("RAW GREETING FROM GEMINI:\n\"{}\"", rawResponse);
-        
+        log.info("RAW GREETING FROM GROQ:\n\"{}\"", rawResponse);
+
         return AiResponse.builder()
                 .raw(rawResponse)
                 .cleaned(cleanResponse(rawResponse))
