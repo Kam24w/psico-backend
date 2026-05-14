@@ -158,5 +158,23 @@ public class ServicioIA {
 
             log.warn("Security alert [{}] level {} detected for user {}", tipo, nivelRiesgo, userId);
         }
-}
+    }
+
+    public String generateInitialGreeting(Long userId, String userName, TipoEmocion emotion) {
+        log.info("Generating initial greeting for user {} ({}) with emotion {}", userId, userName, emotion);
+
+        String memoryContext = getRecentMemory(userId);
+        String systemPrompt = "Eres un asistente psicológico empático iniciando una sesión de voz.";
+        String userMessage = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
+
+        String rawResponse = clienteIA.enviarMensaje(systemPrompt, userMessage);
+        return cleanResponse(rawResponse);
+    }
+
+    private String getRecentMemory(Long userId) {
+        return memoriaRepository.findByUsuarioId(userId).stream()
+                .limit(5)
+                .map(m -> m.getClave() + ": " + m.getValor())
+                .reduce("", (a, b) -> a + "\n" + b);
+    }
 }

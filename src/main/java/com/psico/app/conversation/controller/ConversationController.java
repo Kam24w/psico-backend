@@ -49,6 +49,17 @@ public class ConversationController {
                 .collect(Collectors.toList())));
     }
 
+    @GetMapping("/active-history")
+    public ResponseEntity<ApiResponse<List<MensajeResponse>>> getActiveHistory(java.security.Principal principal) {
+        // Obtenemos el usuario por email (JWT)
+        com.psico.app.auth.model.User user = conversationService.getUserByEmail(principal.getName());
+        List<Message> history = conversationService.getActiveUserHistory(user.getId());
+        
+        return ResponseEntity.ok(ApiResponse.success("Active session history retrieved", history.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList())));
+    }
+
     @GetMapping({"/user/{userId}", "/usuario/{userId}"})
     public ResponseEntity<ApiResponse<List<ConversacionResponse>>> getUserConversations(@PathVariable @NonNull Long userId) {
         return ResponseEntity.ok(ApiResponse.success("Conversations retrieved", conversationService.getUserConversations(userId).stream()

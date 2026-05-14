@@ -23,4 +23,18 @@ public class GeneradorRespuesta {
         }
         return contextualizedMessage;
     }
+
+    public String buildInitialGreetingPrompt(String userName, TipoEmocion emotion, String userMemory) {
+        String emotionDesc = emotion != null ? emotion.name() : "NEUTRAL";
+        String prompt = String.format("El usuario se llama %s y hoy se siente %s.", 
+                userName != null ? userName : "Usuario", emotionDesc);
+        
+        if (userMemory != null && !userMemory.isBlank()) {
+            prompt += "\nRecuerda esto sobre él/ella:\n" + userMemory;
+        }
+
+        prompt += "\n\nREGLA: Genera un saludo INICIAL muy corto, empático y natural (máximo 15 palabras) para iniciar una conversación por voz. Pregúntale cómo está o comenta algo sobre su estado actual de forma sutil.";
+        
+        return prompt;
+    }
 }

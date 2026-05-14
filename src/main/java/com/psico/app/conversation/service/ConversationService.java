@@ -128,4 +128,19 @@ public class ConversationService {
     public List<Conversation> obtenerConversacionesDeUsuario(@NonNull Long usuarioId) {
         return getUserConversations(usuarioId);
     }
+
+    @Transactional
+    public Message initiateConversation(@NonNull Long userId, TipoEmocion emotion) {
+        User user = userService.getById(userId);
+        Conversation conversation = conversationRepository
+                .findFirstByUsuarioIdAndActivaTrue(user.getId())
+                .orElseGet(() -> createNewConversation(user));
+
+        String aiGreeting = servicioIA.generateInitialGreeting(userId, user.getNombre(), emotion);
+
+        return storeAiResponse(conversation, aiGreeting, emotion);
+    }
+    public User getUserByEmail(String email) {
+        return userService.getByEmail(email);
+    }
 }
