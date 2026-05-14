@@ -7,11 +7,11 @@ import com.psico.app.emotion.model.TipoEmocion;
 public class GeneradorRespuesta {
 
     public String buildSystemPrompt(TipoEmocion emotion, String basePersonality) {
-        String emotionInstructions = "El usuario está experimentando: " + (emotion != null ? emotion.name() : "NEUTRAL");
+        String persona = basePersonality != null ? basePersonality : "Eres un asistente emocional empático y humano.";
+        String emocion = emotion != null ? emotion.name() : "NEUTRAL";
         
-        return String.format("%s\n\nContexto de Personalidad Adicional:\n%s\n\nREGLA ESTRICTA: Responde SOLO con el mensaje directo y empático para el usuario. NO incluyas tu proceso de pensamiento, NO uses asteriscos (*) para analizar el estado del usuario, y NO ofrezcas 'Option 1', 'Goal' ni viñetas internas. Dame únicamente la respuesta final limpia y natural.", 
-                emotionInstructions,
-                basePersonality != null ? basePersonality : "Eres un profesional empático.");
+        return String.format("%s. El usuario se siente %s. Responde en español de forma breve, natural y directa. NUNCA incluyas razonamientos internos, validaciones, borradores o etiquetas.", 
+                persona, emocion);
     }
 
     public String buildUserMessage(String originalMessage, TipoEmocion emotion, String userMemory) {
@@ -33,7 +33,7 @@ public class GeneradorRespuesta {
             prompt += "\nRecuerda esto sobre él/ella:\n" + userMemory;
         }
 
-        prompt += "\n\nREGLA: Genera un saludo INICIAL muy corto, empático y natural (máximo 15 palabras) para iniciar una conversación por voz. Pregúntale cómo está o comenta algo sobre su estado actual de forma sutil.";
+        prompt += "\n\nInstrucción: Genera un saludo inicial muy corto y humano (máx 15 palabras) para una charla de voz. Sé empático y directo.";
         
         return prompt;
     }
