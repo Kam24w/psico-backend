@@ -10,7 +10,7 @@ import com.psico.app.ai.model.AlertaSeguridad;
 import com.psico.app.ai.repository.AlertaSeguridadRepository;
 import com.psico.app.ai.repository.MemoriaContextoRepository;
 import com.psico.app.ai.repository.PersonalidadIARepository;
-import com.psico.app.auth.model.Usuario;
+import com.psico.app.auth.model.User;
 import com.psico.app.emotion.model.TipoEmocion;
 
 import jakarta.persistence.EntityManager;
@@ -36,11 +36,10 @@ public class ServicioIA {
     private final MemoriaContextoRepository memoriaRepository;
     private final EntityManager entityManager;
 
-    public String generarRespuesta(Long usuarioId, String mensajeUsuario, TipoEmocion emocion) {
-        log.info("Generando respuesta para usuario {} con emoción: {}", usuarioId, emocion);
+    public String generateResponse(Long userId, String userMessage, TipoEmocion emotion) {
+        log.info("Generating response for user {} with emotion {}", userId, emotion);
 
-        // 1. Verificar Seguridad (Risk Detection)
-        detectarRiesgos(usuarioId, mensajeUsuario);
+        detectRisks(userId, userMessage);
 
         // 2. Obtener Personalidad Activa
         String personalidadPrompt = personalidadRepository.findByActivaTrue()
@@ -48,21 +47,19 @@ public class ServicioIA {
                 .orElse("Eres un asistente psicológico virtual altamente empático.");
 
         // 3. Obtener Memoria Reciente
-        String memoriaContexto = memoriaRepository.findByUsuarioId(usuarioId).stream()
+        String memoryContext = memoriaRepository.findByUsuarioId(userId).stream()
                 .limit(5)
                 .map(m -> m.getClave() + ": " + m.getValor())
                 .reduce("", (a, b) -> a + "\n" + b);
 
-        // 4. Construir Prompts
-        String systemPrompt = generadorRespuesta.construirPromptSistema(emocion, personalidadPrompt);
-        String userMessage  = generadorRespuesta.construirMensajeUsuario(mensajeUsuario, emocion, memoriaContexto);
+        String systemPrompt = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
+        String finalUserMessage = generadorRespuesta.buildUserMessage(userMessage, emotion, memoryContext);
 
-        // 5. Llamar a Gemma 4 y limpiar la respuesta
-        String respuestaCruda = clienteIA.enviarMensaje(systemPrompt, userMessage);
-        return limpiarRespuesta(respuestaCruda);
+        String rawResponse = clienteIA.enviarMensaje(systemPrompt, finalUserMessage);
+        return cleanResponse(rawResponse);
     }
 
-    private String limpiarRespuesta(String texto) {
+    private String cleanResponse(String texto) {
         if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
 
         String resultado = texto.trim();
@@ -153,8 +150,8 @@ public class ServicioIA {
     }
 
     @Transactional
-    public void detectarRiesgos(Long usuarioId, String mensaje) {
-        String lower = mensaje.toLowerCase();
+    public void detectRisks(Long userId, String message) {
+        String lower = message.toLowerCase();
 
         int nivelRiesgo = 0;
         String tipo = null;
@@ -181,10 +178,10 @@ public class ServicioIA {
 
         if (tipo != null) {
             // Referencia segura a entidad existente (sin cargar todos sus campos)
-            Usuario usuarioRef = entityManager.getReference(Usuario.class, usuarioId);
+            User usuarioRef = entityManager.getReference(User.class, userId);
 
             // Truncar fragmento a 500 chars para evitar problemas de columna
-            String fragmento = mensaje.length() > 500 ? mensaje.substring(0, 500) : mensaje;
+            String fragmento = message.length() > 500 ? message.substring(0, 500) : message;
 
             AlertaSeguridad alerta = AlertaSeguridad.builder()
                     .usuario(usuarioRef)
@@ -194,7 +191,25 @@ public class ServicioIA {
                     .build();
             alertaRepository.save(Objects.requireNonNull(alerta));
 
-            log.warn("¡ALERTA DE SEGURIDAD [{}] nivel {} detectada para usuario {}!", tipo, nivelRiesgo, usuarioId);
+            log.warn("Security alert [{}] level {} detected for user {}", tipo, nivelRiesgo, userId);
         }
+    }
+
+    public String generateInitialGreeting(Long userId, String userName, TipoEmocion emotion) {
+        log.info("Generating initial greeting for user {} ({}) with emotion {}", userId, userName, emotion);
+
+        String memoryContext = getRecentMemory(userId);
+        String systemPrompt = "Eres un asistente psicológico empático iniciando una sesión de voz.";
+        String userMessage = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
+
+        String rawResponse = clienteIA.enviarMensaje(systemPrompt, userMessage);
+        return cleanResponse(rawResponse);
+    }
+
+    private String getRecentMemory(Long userId) {
+        return memoriaRepository.findByUsuarioId(userId).stream()
+                .limit(5)
+                .map(m -> m.getClave() + ": " + m.getValor())
+                .reduce("", (a, b) -> a + "\n" + b);
     }
 }

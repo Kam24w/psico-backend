@@ -1,7 +1,7 @@
 package com.psico.app.ai.model;
 
-import com.psico.app.auth.model.Usuario;
-import com.psico.app.conversation.model.Mensaje;
+import com.psico.app.auth.model.User;
+import com.psico.app.conversation.model.Message;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -19,11 +19,11 @@ public class AlertaSeguridad {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    private User usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mensaje_id")
-    private Mensaje mensaje;
+    private Message mensaje;
 
     @Column(nullable = false)
     private String tipo; // ej: "SUICIDIO", "AUTOLESION", "VIOLENCIA"

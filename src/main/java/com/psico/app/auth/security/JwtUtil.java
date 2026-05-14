@@ -21,7 +21,7 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generarToken(String email) {
+    public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
@@ -30,7 +30,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String obtenerEmail(String token) {
+    public String getEmail(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey())
                 .build()
@@ -39,12 +39,27 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    public boolean validarToken(String token) {
+    public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    @Deprecated(forRemoval = false)
+    public String generarToken(String email) {
+        return generateToken(email);
+    }
+
+    @Deprecated(forRemoval = false)
+    public String obtenerEmail(String token) {
+        return getEmail(token);
+    }
+
+    @Deprecated(forRemoval = false)
+    public boolean validarToken(String token) {
+        return validateToken(token);
     }
 }

@@ -1,55 +1,40 @@
 package com.psico.app.ai.service;
 
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.patterns.factory.FabricaEstrategia;
-import com.psico.app.patterns.strategy.EstrategiaEmocion;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import com.psico.app.emotion.model.TipoEmocion;
 
-/**
- * GeneradorRespuesta
- * Construye los prompts optimizados para Gemma 4.
- */
 @Component
-@RequiredArgsConstructor
 public class GeneradorRespuesta {
 
-    private final FabricaEstrategia fabricaEstrategia;
-
-    public String construirPromptSistema(TipoEmocion emocion, String personalidadBase) {
-        EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
-        String instruccionesEmocion = estrategia.obtenerInstruccionesSistema();
-        String personalidad = personalidadBase != null ? personalidadBase : "Eres un profesional empático.";
-
-        return personalidad + "\n\n" + instruccionesEmocion + """
-            
-            === REGLAS ESTRÍCTAS DE FORMATO ===
-            - Responde ÚNICAMENTE con el mensaje directo para el usuario.
-            - PROHIBIDO razonar antes de responder (no escribas "Let's", "I'll", "Draft", etc.)
-            - PROHIBIDO usar asteriscos (*), guiones (-) o numeración para analizar.
-            - Tu respuesta debe ser natural, en español y máximo de 3 oraciones.
-            """;
+    public String buildSystemPrompt(TipoEmocion emotion, String basePersonality) {
+        String emotionInstructions = "El usuario está experimentando: " + (emotion != null ? emotion.name() : "NEUTRAL");
+        
+        return String.format("%s\n\nContexto de Personalidad Adicional:\n%s\n\nREGLA ESTRICTA: Responde SOLO con el mensaje directo y empático para el usuario. NO incluyas tu proceso de pensamiento, NO uses asteriscos (*) para analizar el estado del usuario, y NO ofrezcas 'Option 1', 'Goal' ni viñetas internas. Dame únicamente la respuesta final limpia y natural.", 
+                emotionInstructions,
+                basePersonality != null ? basePersonality : "Eres un profesional empático.");
     }
 
-    public String construirMensajeUsuario(String mensajeOriginal, TipoEmocion emocion, String memoriaUsuario) {
-        EstrategiaEmocion estrategia = fabricaEstrategia.crear(emocion);
-
-        String ejemplos = """
-                Ejemplos de respuesta esperada:
-                Usuario: me siento muy cansado hoy
-                Respuesta: Es completamente válido sentirse así. ¿Quieres contarme qué ha pasado hoy?
-
-                Usuario: hola
-                Respuesta: ¡Hola! Me alegra que estés aquí. ¿Cómo te encuentras hoy?
-
-                Ahora responde al siguiente mensaje:
-                """;
-
-        String contextoEmocion = estrategia.generarContexto(mensajeOriginal);
-
-        if (memoriaUsuario != null && !memoriaUsuario.isBlank()) {
-            return ejemplos + "Contexto previo:\n" + memoriaUsuario + "\n\nMensaje: " + contextoEmocion;
+    public String buildUserMessage(String originalMessage, TipoEmocion emotion, String userMemory) {
+        String contextualizedMessage = "El usuario dice: " + originalMessage;
+        
+        if (userMemory != null && !userMemory.isBlank()) {
+            return String.format("Memoria relevante del usuario:\n%s\n\nMensaje actual:\n%s", 
+                    userMemory, contextualizedMessage);
         }
-        return ejemplos + "Mensaje: " + contextoEmocion;
+        return contextualizedMessage;
+    }
+
+    public String buildInitialGreetingPrompt(String userName, TipoEmocion emotion, String userMemory) {
+        String emotionDesc = emotion != null ? emotion.name() : "NEUTRAL";
+        String prompt = String.format("El usuario se llama %s y hoy se siente %s.", 
+                userName != null ? userName : "Usuario", emotionDesc);
+        
+        if (userMemory != null && !userMemory.isBlank()) {
+            prompt += "\nRecuerda esto sobre él/ella:\n" + userMemory;
+        }
+
+        prompt += "\n\nREGLA: Genera un saludo INICIAL muy corto, empático y natural (máximo 15 palabras) para iniciar una conversación por voz. Pregúntale cómo está o comenta algo sobre su estado actual de forma sutil.";
+        
+        return prompt;
     }
 }

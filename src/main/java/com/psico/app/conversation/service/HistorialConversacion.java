@@ -1,7 +1,7 @@
 package com.psico.app.conversation.service;
 
-import com.psico.app.conversation.model.Conversacion;
-import com.psico.app.conversation.model.Mensaje;
+import com.psico.app.conversation.model.Conversation;
+import com.psico.app.conversation.model.Message;
 import com.psico.app.conversation.repository.ConversacionRepository;
 import com.psico.app.conversation.repository.MensajeRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +23,12 @@ public class HistorialConversacion {
     private final ConversacionRepository conversacionRepository;
     private final MensajeRepository mensajeRepository;
 
-    public List<Conversacion> obtenerTodasLasConversaciones(@NonNull Long usuarioId) {
+    public List<Conversation> obtenerTodasLasConversaciones(@NonNull Long usuarioId) {
         return conversacionRepository.findByUsuarioIdOrderByUpdatedAtDesc(usuarioId);
     }
 
-    public List<Mensaje> obtenerMensajesDeConversacion(@NonNull Long conversacionId) {
-        return mensajeRepository.findByConversacionIdOrderByFechaAsc(conversacionId);
+    public List<Message> obtenerMensajesDeConversacion(@NonNull Long conversacionId) {
+        return mensajeRepository.findByConversationIdOrderByFechaAsc(conversacionId);
     }
 
     @Transactional

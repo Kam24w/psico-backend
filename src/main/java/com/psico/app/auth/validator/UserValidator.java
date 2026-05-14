@@ -12,34 +12,34 @@ public class UserValidator {
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@(.+)$";
 
     public void validarRegistro(RegisterRequest request) {
-        validarEmail(request.getEmail());
-        validarPassword(request.getPassword());
-        validarNombre(request.getNombre());
+        validateEmail(request.getEmail());
+        validatePassword(request.getPassword());
+        validateName(request.getName());
     }
 
-    private void validarEmail(String email) {
+    private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("El email es obligatorio");
+            throw new IllegalArgumentException("Email is required");
         }
 
         if (!Pattern.matches(EMAIL_REGEX, email)) {
-            throw new IllegalArgumentException("Formato de email inválido");
+            throw new IllegalArgumentException("Invalid email format");
         }
     }
 
-    private void validarPassword(String password) {
+    private void validatePassword(String password) {
         if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("La contraseña es obligatoria");
+            throw new IllegalArgumentException("Password is required");
         }
 
         if (password.length() < 6) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
+            throw new IllegalArgumentException("Password must have at least 6 characters");
         }
     }
 
-    private void validarNombre(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre es obligatorio");
+    private void validateName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name is required");
         }
     }
 }

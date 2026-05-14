@@ -1,6 +1,6 @@
 package com.psico.app.emotion.model;
 
-import com.psico.app.auth.model.Usuario;
+import com.psico.app.auth.model.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -20,14 +20,15 @@ public class HistorialEmocional {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    private User usuario;
+
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "historial_id")
     @Builder.Default
-    private List<Emocion> emociones = new ArrayList<>();
+    private List<Emotion> emociones = new ArrayList<>();
 
-    public void agregarEmocion(Emocion emocion) {
+    public void agregarEmocion(Emotion emocion) {
         this.emociones.add(emocion);
     }
 
