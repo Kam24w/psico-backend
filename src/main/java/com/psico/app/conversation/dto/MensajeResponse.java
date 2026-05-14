@@ -18,6 +18,7 @@ public class MensajeResponse {
     private String sender;
     private TipoEmocion associatedEmotion;
     private LocalDateTime createdAt;
+    private String rawContent; // Para debug
 
     @Deprecated(forRemoval = false)
     public String getContenido() {
