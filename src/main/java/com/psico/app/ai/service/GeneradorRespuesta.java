@@ -7,34 +7,60 @@ import com.psico.app.emotion.model.TipoEmocion;
 public class GeneradorRespuesta {
 
     public String buildSystemPrompt(TipoEmocion emotion, String basePersonality) {
-        String persona = basePersonality != null ? basePersonality : "Eres un asistente emocional empático y humano.";
-        String emocion = emotion != null ? emotion.name() : "NEUTRAL";
-        
-        return String.format("%s. El usuario se siente %s. Responde en español de forma breve, natural y directa. NUNCA incluyas razonamientos internos, validaciones, borradores o etiquetas.", 
-                persona, emocion);
+        String emocionDesc = mapEmotionToSpanish(emotion);
+
+        return "Eres Alma, una psicóloga virtual empática y cercana. " +
+               "Estás hablando por voz con una persona que se siente " + emocionDesc + ". " +
+               "REGLAS OBLIGATORIAS:\n" +
+               "1. Responde en máximo 2-3 oraciones cortas.\n" +
+               "2. SIEMPRE referencia algo específico de lo que el usuario dijo.\n" +
+               "3. NUNCA uses frases genéricas como 'Entiendo perfectamente' o 'Cuéntame más'.\n" +
+               "4. Habla en español, de forma natural y humana, como si fuera una conversación.\n" +
+               "5. No uses listas, markdown, ni puntos numerados.\n" +
+               "6. No incluyas razonamientos internos ni etiquetas.\n" +
+               "7. Muestra empatía real haciendo eco del contenido emocional del usuario.";
     }
 
     public String buildUserMessage(String originalMessage, TipoEmocion emotion, String userMemory) {
-        String contextualizedMessage = "El usuario dice: " + originalMessage;
+        StringBuilder sb = new StringBuilder();
         
         if (userMemory != null && !userMemory.isBlank()) {
-            return String.format("Memoria relevante del usuario:\n%s\n\nMensaje actual:\n%s", 
-                    userMemory, contextualizedMessage);
+            sb.append("Contexto previo del usuario:\n").append(userMemory).append("\n\n");
         }
-        return contextualizedMessage;
+        
+        sb.append("El usuario dice: \"").append(originalMessage).append("\"\n\n");
+        sb.append("Responde de forma empática y específica a lo que acaba de decir.");
+        
+        return sb.toString();
     }
 
     public String buildInitialGreetingPrompt(String userName, TipoEmocion emotion, String userMemory) {
-        String emotionDesc = emotion != null ? emotion.name() : "NEUTRAL";
-        String prompt = String.format("El usuario se llama %s y hoy se siente %s.", 
-                userName != null ? userName : "Usuario", emotionDesc);
+        String emocionDesc = mapEmotionToSpanish(emotion);
+        String nombre = userName != null && !userName.isBlank() ? userName : "amigo";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Saluda a ").append(nombre).append(" que parece sentirse ").append(emocionDesc).append(".\n");
         
         if (userMemory != null && !userMemory.isBlank()) {
-            prompt += "\nRecuerda esto sobre él/ella:\n" + userMemory;
+            sb.append("Recuerda esto sobre él/ella: ").append(userMemory).append("\n");
         }
 
-        prompt += "\n\nInstrucción: Genera un saludo inicial muy corto y humano (máx 15 palabras) para una charla de voz. Sé empático y directo.";
+        sb.append("\nGenera un saludo inicial cálido y natural, de máximo 2 oraciones, ");
+        sb.append("adaptado a cómo se siente. Habla directamente a la persona. No uses frases genéricas.");
         
-        return prompt;
+        return sb.toString();
+    }
+    
+    private String mapEmotionToSpanish(TipoEmocion emotion) {
+        if (emotion == null) return "neutral";
+        return switch (emotion) {
+            case FELIZ -> "feliz o animado";
+            case TRISTE -> "triste o desanimado";
+            case ENOJADO -> "molesto o frustrado";
+            case ANSIOSO -> "ansioso o preocupado";
+            case ESTRESADO -> "estresado";
+            case SORPRENDIDO -> "sorprendido";
+            default -> "neutral";
+        };
     }
 }

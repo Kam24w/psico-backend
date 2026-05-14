@@ -71,6 +71,7 @@ public class ConversationController {
         return MensajeResponse.builder()
                 .id(mensaje.getId())
                 .content(mensaje.getContenido())
+                .rawContent(mensaje.getRawContenido())
                 .sender(mensaje.getRemitente().name())
                 .associatedEmotion(mensaje.getEmocionAsociada())
                 .createdAt(mensaje.getFecha())

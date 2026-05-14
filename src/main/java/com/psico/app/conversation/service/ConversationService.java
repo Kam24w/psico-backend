@@ -7,6 +7,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psico.app.ai.dto.AiResponse;
 import com.psico.app.ai.service.ServicioIA;
 import com.psico.app.auth.model.User;
 import com.psico.app.conversation.model.Conversation;
@@ -40,9 +41,9 @@ public class ConversationService {
                 ? detectedEmotion
                 : emotionService.getLatestEmotion(userId);
 
-        String aiResponseText = servicioIA.generateResponse(userId, content, toTipoEmocion(emotion));
+        AiResponse aiResponse = servicioIA.generateResponse(userId, content, toTipoEmocion(emotion));
 
-        return storeAiResponse(conversation, aiResponseText, emotion);
+        return storeAiResponse(conversation, aiResponse, emotion);
     }
 
     @Transactional
@@ -64,14 +65,15 @@ public class ConversationService {
     }
 
     @Transactional
-    protected Message storeAiResponse(Conversation conversation, String aiResponseText, TipoEmocion emotion) {
-        Message aiResponse = Objects.requireNonNull(Message.builder()
-                .contenido(aiResponseText)
+    protected Message storeAiResponse(Conversation conversation, AiResponse aiResponse, TipoEmocion emotion) {
+        Message message = Objects.requireNonNull(Message.builder()
+                .contenido(aiResponse.getCleaned())
+                .rawContenido(aiResponse.getRaw())
                 .remitente(Message.Remitente.AI)
                 .emocionAsociada(toTipoEmocion(emotion))
                 .conversation(conversation)
                 .build());
-        return Objects.requireNonNull(messageRepository.save(aiResponse));
+        return Objects.requireNonNull(messageRepository.save(message));
     }
 
     public List<Message> getConversationHistory(@NonNull Long conversationId) {
@@ -111,7 +113,7 @@ public class ConversationService {
 
     @Deprecated(forRemoval = false)
     protected Message guardarRespuestaIA(Conversation conversacion, String respuestaTexto, TipoEmocion emocion) {
-        return storeAiResponse(conversacion, respuestaTexto, emocion);
+        return storeAiResponse(conversacion, AiResponse.builder().cleaned(respuestaTexto).raw(respuestaTexto).build(), emocion);
     }
 
     @Deprecated(forRemoval = false)
@@ -136,7 +138,7 @@ public class ConversationService {
                 .findFirstByUsuarioIdAndActivaTrue(user.getId())
                 .orElseGet(() -> createNewConversation(user));
 
-        String aiGreeting = servicioIA.generateInitialGreeting(userId, user.getNombre(), emotion);
+        AiResponse aiGreeting = servicioIA.generateInitialGreeting(userId, user.getNombre(), emotion);
 
         return storeAiResponse(conversation, aiGreeting, emotion);
     }
