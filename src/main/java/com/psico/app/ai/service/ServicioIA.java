@@ -61,56 +61,91 @@ public class ServicioIA {
 
     private String cleanResponse(String texto) {
         if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
-        
+
         String resultado = texto.trim();
 
-        // 1. Estrategia principal para este modelo Gemma específico: 
-        // Extraer el texto final que suele poner entre comillas cerca del final: * "Respuesta..." *
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?s).*\\*\\s*\"([^\"]+)\"\\s*\\*.*").matcher(resultado);
-        if (m.matches()) {
-            return m.group(1).trim();
+        // ── ESTRATEGIA 0 ─────────────────────────────────────────────────────────
+        // Gemma a veces devuelve todo su razonamiento interno visible:
+        // "* User Emotional State: ... * Goal: ... * Draft 1: ... * Draft 2: ..."
+        // Detectamos si hay borradores (Draft) y extraemos el último.
+        java.util.regex.Pattern pDraft = java.util.regex.Pattern.compile(
+            "\\*\\s*Draft\\s*\\d+[:\\*]\\s*([^*]+?)(?=\\s*\\*\\s*(?:Draft|Spanish|$))",
+            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.DOTALL
+        );
+        java.util.regex.Matcher mDraft = pDraft.matcher(resultado);
+        String ultimoDraft = null;
+        while (mDraft.find()) {
+            String candidato = mDraft.group(1).trim();
+            if (candidato.length() > 10) ultimoDraft = candidato;
+        }
+        if (ultimoDraft != null) {
+            return ultimoDraft.replaceAll("^[\"*]+|[\"*]+$", "").trim();
         }
 
-        // 2. Estrategia de respaldo: Extraer si usa "Selected response:" o "Option X:" al final
-        String lowerText = resultado.toLowerCase();
-        if (lowerText.contains("selected response:")) {
-            int idx = lowerText.lastIndexOf("selected response:");
-            resultado = resultado.substring(idx + "selected response:".length()).trim();
-        } else if (lowerText.contains("respuesta final:")) {
-            int idx = lowerText.lastIndexOf("respuesta final:");
-            resultado = resultado.substring(idx + "respuesta final:".length()).trim();
+        // Auto-evaluación tipo checklist: "* Spanish? Yes. * Max 3..."
+        String primeraLinea = resultado.split("\n")[0].toLowerCase();
+        boolean esChecklist = primeraLinea.matches(".*\\b(spanish|sentences|empathetic|direct|quotes|asterisks|user emotional|goal:|constraints).*");
+        if (esChecklist) {
+            return "Hola, estoy aquí para escucharte. ¿Cómo te sientes en este momento?";
         }
 
-        // 3. Limpiar por líneas para quitar el razonamiento que quede
+
+        // Gemma a veces razona en inglés y luego pone la respuesta entre comillas:
+        // "Let's go with X. \"Respuesta.\" \"Respuesta duplicada.\""
+        // Tomamos la ÚLTIMA cadena entre comillas dobles del texto — es la versión final.
+        java.util.regex.Pattern pComillas = java.util.regex.Pattern.compile("\"([^\"]{10,})\"");
+        java.util.regex.Matcher mComillas = pComillas.matcher(resultado);
+        String ultimaComilla = null;
+        while (mComillas.find()) {
+            ultimaComilla = mComillas.group(1).trim();
+        }
+        if (ultimaComilla != null && !ultimaComilla.isBlank()) {
+            return ultimaComilla;
+        }
+
+        // ── ESTRATEGIA 2 ─────────────────────────────────────────────────────────
+        // Marcadores explícitos de respuesta final
+        String lower = resultado.toLowerCase();
+        String[] marcadores = {
+            "selected response:", "respuesta final:", "respuesta:",
+            "final response:", "my response:", "here is my response:"
+        };
+        for (String marcador : marcadores) {
+            int idx = lower.lastIndexOf(marcador);
+            if (idx >= 0) {
+                String tras = resultado.substring(idx + marcador.length()).trim();
+                tras = tras.replaceAll("^\"|\"$", "").trim();
+                if (!tras.isBlank()) return tras;
+            }
+        }
+
+        // ── ESTRATEGIA 3 ─────────────────────────────────────────────────────────
+        // Filtrar línea a línea: descartar razonamiento en inglés y meta-comentarios
         String[] lineas = resultado.split("\n");
         StringBuilder sb = new StringBuilder();
-        
+
         for (String linea : lineas) {
             String t = linea.trim();
             if (t.isEmpty()) continue;
-            
-            // Filtros agresivos
+
+            // Descartar razonamiento meta en inglés
+            if (t.toLowerCase().matches("^(let'?s|okay|ok,|i('ll| will| need| should| want)|here'?s|now,|so,|alright|first,|the user|this is|i think|we need|my response|note:|step \\d|option \\d).*")) continue;
+            // Descartar listas y bullets
             if (t.startsWith("* ") || t.startsWith("- ") || t.startsWith("**")) continue;
-            if (t.toLowerCase().matches("^(user says|instruction \\d|el usuario dijo|goal:|constraints:|option \\d:).*")) continue;
-            if (t.toLowerCase().matches("^(brief\\?|spanish\\?|step \\d|paso \\d).*")) continue;
             if (t.matches("^\\d+\\.\\s.*")) continue;
+            // Descartar etiquetas entre corchetes
             if (t.matches("^\\[.*\\]$")) continue;
-            
+            // Descartar líneas de instrucción/contexto en español
+            if (t.toLowerCase().matches("^(goal:|constraints:|el usuario dijo|instrucción \\d|contexto:|tono:|brevedad:).*")) continue;
+
             sb.append(t).append(" ");
         }
-        
-        resultado = sb.toString().trim();
 
-        // 3. Quitar asteriscos y comillas que puedan quedar atrapando el texto
-        resultado = resultado.replaceAll("^\\*+|\\*+$", "").trim(); // Quitar * sueltos a los lados
-        resultado = resultado.replaceAll("^\"|\"$", "").trim();     // Quitar comillas a los lados
-        
-        // Si por ser tan agresivos borramos todo, devolvemos un texto por defecto pero limpio
-        if (resultado.isEmpty()) {
-            resultado = texto.replaceAll("^\\*.*\\*\\s*", "").replaceAll("^\"|\"$", "").trim();
-            if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
-        }
-        
+        resultado = sb.toString().trim();
+        // Quitar comillas y asteriscos sobrantes de los extremos
+        resultado = resultado.replaceAll("^[\"*]+|[\"*]+$", "").trim();
+
+        if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
         return resultado;
     }
 
