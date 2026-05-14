@@ -64,6 +64,7 @@ public class ClienteIA {
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
+        logger.info("=== GEMINI API CALL to: {} ===", apiUrl);
         try {
             ResponseEntity<Object> response = restTemplate.postForEntity(
                     urlConKey,
@@ -72,6 +73,9 @@ public class ClienteIA {
             );
 
             Object responseBodyObj = response.getBody();
+            logger.info("=== GEMINI RAW RESPONSE STATUS: {} ===", response.getStatusCode());
+            logger.info("=== GEMINI RAW RESPONSE BODY: {} ===", responseBodyObj);
+            
             if (!(responseBodyObj instanceof Map<?, ?> responseBody)) {
                 return "Lo siento, no pude procesar tu mensaje en este momento. ¿Puedes intentarlo de nuevo?";
             }

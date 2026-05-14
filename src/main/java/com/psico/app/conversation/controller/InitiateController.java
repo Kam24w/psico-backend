@@ -49,11 +49,13 @@ public class InitiateController {
         MensajeResponse response = MensajeResponse.builder()
                 .id(greeting.getId())
                 .content(greeting.getContenido())
+                .rawContent(greeting.getRawContenido())
                 .sender("AI")
                 .associatedEmotion(greeting.getEmocionAsociada())
                 .createdAt(greeting.getFecha())
                 .build();
 
-        return ResponseEntity.ok(ApiResponse.success("Initial greeting generated", response));
+        String debugInfo = greeting.getRawContenido() != null ? " [RAW_OK]" : " [RAW_NULL]";
+        return ResponseEntity.ok(ApiResponse.success("Initial greeting generated" + debugInfo, response));
     }
 }

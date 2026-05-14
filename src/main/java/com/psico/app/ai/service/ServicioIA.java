@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psico.app.ai.client.ClienteIA;
+import com.psico.app.ai.dto.AiResponse;
 import com.psico.app.ai.model.AlertaSeguridad;
 import com.psico.app.ai.repository.AlertaSeguridadRepository;
 import com.psico.app.ai.repository.MemoriaContextoRepository;
@@ -29,8 +30,9 @@ public class ServicioIA {
     private final MemoriaContextoRepository memoriaRepository;
     private final EntityManager entityManager;
 
-    public String generateResponse(Long userId, String userMessage, TipoEmocion emotion) {
-        log.info("Generating response for user {} with emotion {}", userId, emotion);
+    public AiResponse generateResponse(Long userId, String userMessage, TipoEmocion emotion) {
+        log.info("--- START AI GENERATION ---");
+        log.info("User ID: {}, Message: {}, Emotion: {}", userId, userMessage, emotion);
 
         detectRisks(userId, userMessage);
 
@@ -43,39 +45,39 @@ public class ServicioIA {
         String systemPrompt = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
         String finalUserMessage = generadorRespuesta.buildUserMessage(userMessage, emotion, memoryContext);
 
+        log.info("FULL SYSTEM PROMPT SENT TO GEMINI:\n{}", systemPrompt);
+        log.info("FULL USER MESSAGE SENT TO GEMINI:\n{}", finalUserMessage);
+
         String rawResponse = clienteIA.enviarMensaje(systemPrompt, finalUserMessage);
-        return cleanResponse(rawResponse);
+        
+        log.info("RAW RESPONSE FROM GEMINI:\n\"{}\"", rawResponse);
+
+        String cleaned = cleanResponse(rawResponse);
+        
+        log.info("FINAL CLEANED RESPONSE:\n\"{}\"", cleaned);
+        log.info("--- END AI GENERATION ---");
+        
+        return AiResponse.builder()
+                .raw(rawResponse)
+                .cleaned(cleaned)
+                .build();
     }
 
     private String cleanResponse(String texto) {
         if (texto == null || texto.isBlank()) return "Hola, estoy aquí para escucharte.";
-
-        // 1. Detección de contenido interno (Draft, Goal, Option, etc.)
-        String[] forbiddenTokens = {
-            "Constraint", "Goal:", "Option", "Draft", "Reasoning", 
-            "Validation", "Analysis", "Plan:", "Step 1", "Task:", 
-            "Self-correction", "User status:", "Selected response:"
-        };
-
-        for (String token : forbiddenTokens) {
-            if (texto.contains(token)) {
-                log.warn("Internal AI content detected! Falling back. Token found: {}", token);
-                return "Entiendo perfectamente lo que dices. ¿Me podrías contar un poco más sobre eso?";
-            }
-        }
-
-        // 2. Limpieza básica
-        String resultado = texto.trim();
-        resultado = resultado.replaceAll("^\\*.*\\*\\s*", ""); // Quitar pensamientos entre asteriscos
-        resultado = resultado.replaceAll("^\"|\"$", "").trim(); // Quitar comillas envolventes
         
-        // Si tiene markdown de lista, Gemma está razonando o ignorando la instrucción de brevedad
-        if (resultado.contains("* ") || resultado.contains("- ") || resultado.matches("(?s).*\\d\\..*")) {
-             log.warn("Markdown list detected in response, returning fallback.");
-             return "Entiendo. ¿Te gustaría profundizar un poco más en eso?";
+        log.info("=== GEMINI RAW (passthrough) ===\n\"{}\"", texto);
+        
+        // Sanitizer DESHABILITADO temporalmente para validar respuestas de Gemini
+        // Solo limpiar caracteres básicos
+        String resultado = texto.trim()
+            .replaceAll("^\"|\"$", "") // quitar comillas externas
+            .replaceAll("\\*\\*", "")  // quitar negrita markdown
+            .trim();
+            
+        if (resultado.length() < 3) {
+            return "Cuéntame más, estoy escuchando.";
         }
-
-        if (resultado.isEmpty()) return "Entiendo perfectamente.";
         
         return resultado;
     }
@@ -118,7 +120,7 @@ public class ServicioIA {
         }
     }
 
-    public String generateInitialGreeting(Long userId, String userName, TipoEmocion emotion) {
+    public AiResponse generateInitialGreeting(Long userId, String userName, TipoEmocion emotion) {
         log.info("Generating initial greeting for user {} ({}) with emotion {}", userId, userName, emotion);
 
         String memoryContext = getRecentMemory(userId);
@@ -126,7 +128,12 @@ public class ServicioIA {
         String userMessage = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
 
         String rawResponse = clienteIA.enviarMensaje(systemPrompt, userMessage);
-        return cleanResponse(rawResponse);
+        log.info("RAW GREETING FROM GEMINI:\n\"{}\"", rawResponse);
+        
+        return AiResponse.builder()
+                .raw(rawResponse)
+                .cleaned(cleanResponse(rawResponse))
+                .build();
     }
 
     private String getRecentMemory(Long userId) {
