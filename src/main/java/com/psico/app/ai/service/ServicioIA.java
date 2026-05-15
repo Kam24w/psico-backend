@@ -55,7 +55,7 @@ public class ServicioIA {
         // Pasar el nivel de riesgo: 0 → 8B rápido, >0 → 70B empático
         String rawResponse = clienteIA.enviarMensajeConRiesgo(systemPrompt, finalUserMessage, nivelRiesgo);
 
-        log.info("RAW RESPONSE FROM GROQ:\n\"{}\"", rawResponse);
+        log.info("RAW RESPONSE FROM AI:\n\"{}\"", rawResponse);
 
         String cleaned = cleanResponse(rawResponse);
 
@@ -71,7 +71,7 @@ public class ServicioIA {
     private String cleanResponse(String texto) {
         if (texto == null || texto.isBlank()) return "Hola, estoy aquí para escucharte.";
 
-        log.info("=== GROQ RAW (passthrough) ===\n\"{}\"", texto);
+        log.info("=== AI RAW (passthrough) ===\n\"{}\"", texto);
 
         String resultado = texto.trim()
             .replaceAll("^\"|\"$", "")
@@ -139,7 +139,7 @@ public class ServicioIA {
 
         // El saludo inicial siempre usa el modelo rápido (nivelRiesgo = 0)
         String rawResponse = clienteIA.enviarMensaje(systemPrompt, userMessage);
-        log.info("RAW GREETING FROM GROQ:\n\"{}\"", rawResponse);
+        log.info("RAW GREETING FROM AI:\n\"{}\"", rawResponse);
 
         return AiResponse.builder()
                 .raw(rawResponse)
