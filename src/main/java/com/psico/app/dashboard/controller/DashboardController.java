@@ -16,8 +16,8 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
-    @GetMapping("/{usuarioId}")
-    public ResponseEntity<ApiResponse<DashboardService.DashboardSummary>> obtenerResumen(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(ApiResponse.success("Resumen del dashboard", dashboardService.obtenerResumen(usuarioId)));
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<DashboardService.DashboardSummary>> getSummary(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success("Resumen del dashboard", dashboardService.getSummary(userId)));
     }
 }

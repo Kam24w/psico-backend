@@ -1,9 +1,9 @@
 package com.psico.app.analysis.service;
 
-import com.psico.app.analysis.model.AnalisisEmocional;
-import com.psico.app.analysis.repository.AnalisisEmocionalRepository;
+import com.psico.app.analysis.model.EmotionalAnalysis;
+import com.psico.app.analysis.repository.EmotionalAnalysisRepository;
 import com.psico.app.conversation.model.Message;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,35 +15,35 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EmotionAnalysisService {
 
-    private final AnalisisEmocionalRepository analisisRepository;
+    private final EmotionalAnalysisRepository analysisRepository;
 
     @Transactional
-    public AnalisisEmocional analizarConversacion(Long usuarioId, List<Message> mensajes) {
-        long sentimientosPositivos = mensajes.stream()
-                .filter(m -> m.getEmocionAsociada() == TipoEmocion.FELIZ || m.getEmocionAsociada() == TipoEmocion.SORPRENDIDO)
+    public EmotionalAnalysis analyzeConversation(Long userId, List<Message> messages) {
+        long positiveCount = messages.stream()
+                .filter(m -> m.getAssociatedEmotion() == EmotionType.HAPPY || m.getAssociatedEmotion() == EmotionType.SURPRISED)
                 .count();
 
-        long sentimientosNegativos = mensajes.stream()
-                .filter(m -> m.getEmocionAsociada() == TipoEmocion.TRISTE || m.getEmocionAsociada() == TipoEmocion.ESTRESADO || m.getEmocionAsociada() == TipoEmocion.ANSIOSO || m.getEmocionAsociada() == TipoEmocion.ENOJADO)
+        long negativeCount = messages.stream()
+                .filter(m -> m.getAssociatedEmotion() == EmotionType.SAD || m.getAssociatedEmotion() == EmotionType.STRESSED || m.getAssociatedEmotion() == EmotionType.ANXIOUS || m.getAssociatedEmotion() == EmotionType.ANGRY)
                 .count();
 
-        AnalisisEmocional analisis = AnalisisEmocional.builder()
-                .usuarioId(usuarioId)
-                .mensajesAnalizados(mensajes.size())
-                .positivos((int) sentimientosPositivos)
-                .negativos((int) sentimientosNegativos)
-                .fecha(LocalDateTime.now())
+        EmotionalAnalysis analysis = EmotionalAnalysis.builder()
+                .userId(userId)
+                .analyzedMessages(messages.size())
+                .positive((int) positiveCount)
+                .negative((int) negativeCount)
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        return analisisRepository.save(analisis);
+        return analysisRepository.save(analysis);
     }
 
-    public double obtenerTendencia(List<AnalisisEmocional> historico) {
-        if (historico.isEmpty()) {
+    public double getTrend(List<EmotionalAnalysis> history) {
+        if (history.isEmpty()) {
             return 0.0;
         }
-        return historico.stream()
-                .mapToDouble(a -> a.getPositivos() - a.getNegativos())
+        return history.stream()
+                .mapToDouble(a -> a.getPositive() - a.getNegative())
                 .average()
                 .orElse(0.0);
     }

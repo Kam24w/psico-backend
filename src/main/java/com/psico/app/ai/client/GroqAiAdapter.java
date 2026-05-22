@@ -25,7 +25,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @Primary
-public class GroqAiAdapter implements ClienteIA {
+public class GroqAiAdapter implements AIClient {
 
     private static final Logger logger = LoggerFactory.getLogger(GroqAiAdapter.class);
 
@@ -41,35 +41,35 @@ public class GroqAiAdapter implements ClienteIA {
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
-     * Llamada sin nivel de riesgo — usa modelo rápido.
-     * Mantiene compatibilidad con llamadas existentes en ServicioIA.
+     * Call without risk level — uses fast model.
+     * Maintains compatibility with existing calls.
      */
     @Override
-    public String enviarMensaje(String systemPrompt, String userMessage) {
-        return enviarMensajeConRiesgo(systemPrompt, userMessage, 0);
+    public String sendMessage(String systemPrompt, String userMessage) {
+        return sendMessageWithRisk(systemPrompt, userMessage, 0);
     }
 
     /**
-     * Llamada con nivel de riesgo — elige el modelo según criticidad.
-     * nivelRiesgo > 0 activa llama-3.3-70b para respuestas más empáticas.
+     * Call with risk level — chooses model according to criticality.
+     * riskLevel > 0 activates llama-3.3-70b for more empathetic responses.
      */
     @Override
-    public String enviarMensajeConRiesgo(String systemPrompt, String userMessage, int nivelRiesgo) {
+    public String sendMessageWithRisk(String systemPrompt, String userMessage, int riskLevel) {
         if (apiKey == null || apiKey.isBlank() || apiKey.equals("sin-configurar")) {
             logger.error("No se configuró GROQ_API_KEY. La IA no puede responder.");
             return "La IA no está configurada en este entorno. Falta GROQ_API_KEY.";
         }
 
-        String modelo = nivelRiesgo > 0 ? MODEL_SAFE : MODEL_FAST;
-        double temperature = nivelRiesgo > 0 ? 0.7 : 1.0;
+        String modelo = riskLevel > 0 ? MODEL_SAFE : MODEL_FAST;
+        double temperature = riskLevel > 0 ? 0.7 : 1.0;
 
-        logger.info("=== GROQ API CALL | modelo: {} | nivelRiesgo: {} ===", modelo, nivelRiesgo);
+        logger.info("=== GROQ API CALL | modelo: {} | riskLevel: {} ===", modelo, riskLevel);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        // Formato OpenAI-compatible: system + user en el array messages
+        // OpenAI-compatible format: system + user in messages array
         Map<String, Object> body = Map.of(
             "model", modelo,
             "max_tokens", 512,
@@ -90,7 +90,7 @@ public class GroqAiAdapter implements ClienteIA {
 
             if (!(response.getBody() instanceof Map<?, ?> responseBody)) return fallback();
 
-            // Estructura OpenAI: choices[0].message.content
+            // OpenAI structure: choices[0].message.content
             Object choicesObj = responseBody.get("choices");
             if (choicesObj instanceof List<?> choices && !choices.isEmpty()) {
                 Object first = choices.get(0);

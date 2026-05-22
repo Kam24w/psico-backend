@@ -30,9 +30,9 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "rol", nullable = false)
     @Builder.Default
-    private Rol rol = Rol.USER;
+    private Role role = Role.USER;
 
     @Column(name = "created_at")
     @Builder.Default

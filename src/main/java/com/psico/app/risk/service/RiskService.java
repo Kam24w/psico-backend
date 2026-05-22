@@ -1,9 +1,9 @@
 package com.psico.app.risk.service;
 
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.risk.model.AlertaRiesgo;
-import com.psico.app.risk.model.NivelRiesgo;
-import com.psico.app.risk.repository.AlertaRiesgoRepository;
+import com.psico.app.emotion.model.EmotionType;
+import com.psico.app.risk.model.RiskAlert;
+import com.psico.app.risk.model.RiskLevel;
+import com.psico.app.risk.repository.RiskAlertRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,30 +15,30 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RiskService {
 
-    private final AlertaRiesgoRepository alertaRepository;
+    private final RiskAlertRepository alertRepository;
 
-    public NivelRiesgo evaluarRiesgo(Long usuarioId, TipoEmocion emocion, String mensaje) {
-        if (emocion == TipoEmocion.ENOJADO || emocion == TipoEmocion.ESTRESADO) {
-            return NivelRiesgo.ALTO;
+    public RiskLevel evaluateRisk(Long userId, EmotionType emotion, String message) {
+        if (emotion == EmotionType.ANGRY || emotion == EmotionType.STRESSED) {
+            return RiskLevel.HIGH;
         }
-        if (emocion == TipoEmocion.ANSIOSO || mensaje.contains("no puedo")) {
-            return NivelRiesgo.MODERADO;
+        if (emotion == EmotionType.ANXIOUS || message.contains("no puedo")) {
+            return RiskLevel.MEDIUM;
         }
-        return NivelRiesgo.BAJO;
+        return RiskLevel.LOW;
     }
 
     @Transactional
-    public AlertaRiesgo registrarAlerta(Long usuarioId, NivelRiesgo nivel, String razon) {
-        AlertaRiesgo alerta = AlertaRiesgo.builder()
-                .usuarioId(usuarioId)
-                .nivel(nivel)
-                .razon(razon)
-                .creadoEn(LocalDateTime.now())
+    public RiskAlert registerAlert(Long userId, RiskLevel level, String reason) {
+        RiskAlert alert = RiskAlert.builder()
+                .userId(userId)
+                .level(level)
+                .reason(reason)
+                .createdAt(LocalDateTime.now())
                 .build();
-        return alertaRepository.save(alerta);
+        return alertRepository.save(alert);
     }
 
-    public List<AlertaRiesgo> obtenerAlertas(Long usuarioId) {
-        return alertaRepository.findByUsuarioIdOrderByCreadoEnDesc(usuarioId);
+    public List<RiskAlert> getAlerts(Long userId) {
+        return alertRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

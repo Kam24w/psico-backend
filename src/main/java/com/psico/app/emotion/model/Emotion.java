@@ -23,14 +23,14 @@ public class Emotion {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TipoEmocion tipo;
+    @Column(name = "tipo", nullable = false)
+    private EmotionType type;
 
     @NotNull
     @Min(0)
     @Max(1)
-    @Column(nullable = false)
-    private Double intensidad;
+    @Column(name = "intensidad", nullable = false)
+    private Double intensity;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)

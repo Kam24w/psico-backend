@@ -1,16 +1,16 @@
 package com.psico.app.ai.service;
 
 import org.springframework.stereotype.Component;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 
 @Component
-public class GeneradorRespuesta {
+public class ResponseGenerator {
 
-    public String buildSystemPrompt(TipoEmocion emotion, String basePersonality) {
-        String emocionDesc = mapEmotionToSpanish(emotion);
+    public String buildSystemPrompt(EmotionType emotion, String basePersonality) {
+        String emotionDesc = mapEmotionToSpanish(emotion);
 
         return "Eres Alma, una psicóloga virtual empática y cercana. " +
-               "Estás hablando por voz con una persona que se siente " + emocionDesc + ". " +
+               "Estás hablando por voz con una persona que se siente " + emotionDesc + ". " +
                "REGLAS OBLIGATORIAS:\n" +
                "1. Responde en máximo 2-3 oraciones cortas.\n" +
                "2. SIEMPRE referencia algo específico de lo que el usuario dijo.\n" +
@@ -21,7 +21,7 @@ public class GeneradorRespuesta {
                "7. Muestra empatía real haciendo eco del contenido emocional del usuario.";
     }
 
-    public String buildUserMessage(String originalMessage, TipoEmocion emotion, String userMemory) {
+    public String buildUserMessage(String originalMessage, EmotionType emotion, String userMemory) {
         StringBuilder sb = new StringBuilder();
         
         if (userMemory != null && !userMemory.isBlank()) {
@@ -34,12 +34,12 @@ public class GeneradorRespuesta {
         return sb.toString();
     }
 
-    public String buildInitialGreetingPrompt(String userName, TipoEmocion emotion, String userMemory) {
-        String emocionDesc = mapEmotionToSpanish(emotion);
-        String nombre = userName != null && !userName.isBlank() ? userName : "amigo";
+    public String buildInitialGreetingPrompt(String userName, EmotionType emotion, String userMemory) {
+        String emotionDesc = mapEmotionToSpanish(emotion);
+        String name = userName != null && !userName.isBlank() ? userName : "amigo";
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Saluda a ").append(nombre).append(" que parece sentirse ").append(emocionDesc).append(".\n");
+        sb.append("Saluda a ").append(name).append(" que parece sentirse ").append(emotionDesc).append(".\n");
         
         if (userMemory != null && !userMemory.isBlank()) {
             sb.append("Recuerda esto sobre él/ella: ").append(userMemory).append("\n");
@@ -51,15 +51,15 @@ public class GeneradorRespuesta {
         return sb.toString();
     }
     
-    private String mapEmotionToSpanish(TipoEmocion emotion) {
+    private String mapEmotionToSpanish(EmotionType emotion) {
         if (emotion == null) return "neutral";
         return switch (emotion) {
-            case FELIZ -> "feliz o animado";
-            case TRISTE -> "triste o desanimado";
-            case ENOJADO -> "molesto o frustrado";
-            case ANSIOSO -> "ansioso o preocupado";
-            case ESTRESADO -> "estresado";
-            case SORPRENDIDO -> "sorprendido";
+            case HAPPY -> "feliz o animado";
+            case SAD -> "triste o desanimado";
+            case ANGRY -> "molesto o frustrado";
+            case ANXIOUS -> "ansioso o preocupado";
+            case STRESSED -> "estresado";
+            case SURPRISED -> "sorprendido";
             default -> "neutral";
         };
     }

@@ -1,6 +1,6 @@
 package com.psico.app.conversation.dto;
 
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,26 +16,7 @@ public class MessageResponse {
     private Long id;
     private String content;
     private String sender;
-    private TipoEmocion associatedEmotion;
+    private EmotionType associatedEmotion;
     private LocalDateTime createdAt;
-
-    @Deprecated(forRemoval = false)
-    public String getContenido() {
-        return content;
-    }
-
-    @Deprecated(forRemoval = false)
-    public String getRemitente() {
-        return sender;
-    }
-
-    @Deprecated(forRemoval = false)
-    public TipoEmocion getEmocionAsociada() {
-        return associatedEmotion;
-    }
-
-    @Deprecated(forRemoval = false)
-    public LocalDateTime getFecha() {
-        return createdAt;
-    }
+    private String rawContent;
 }

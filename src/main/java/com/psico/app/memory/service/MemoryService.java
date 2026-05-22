@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.memory.model.MemoriaUsuario;
-import com.psico.app.memory.repository.MemoriaUsuarioRepository;
+import com.psico.app.emotion.model.EmotionType;
+import com.psico.app.memory.model.UserMemory;
+import com.psico.app.memory.repository.UserMemoryRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -15,29 +15,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MemoryService {
 
-    private final MemoriaUsuarioRepository memoriaRepository;
+    private final UserMemoryRepository memoryRepository;
 
     @Transactional
-    public MemoriaUsuario saveMemory(Long userId, String content, TipoEmocion associatedEmotion) {
-        MemoriaUsuario memory = MemoriaUsuario.builder()
-                .usuarioId(userId)
-                .texto(content)
-                .emocionAsociada(associatedEmotion)
+    public UserMemory saveMemory(Long userId, String content, EmotionType associatedEmotion) {
+        UserMemory memory = UserMemory.builder()
+                .userId(userId)
+                .text(content)
+                .associatedEmotion(associatedEmotion)
                 .build();
-        return memoriaRepository.save(memory);
+        return memoryRepository.save(memory);
     }
 
-    public List<MemoriaUsuario> getMemories(Long userId) {
-        return memoriaRepository.findByUsuarioIdOrderByCreadoEnDesc(userId);
-    }
-
-    @Deprecated(forRemoval = false)
-    public MemoriaUsuario guardarMemoria(Long usuarioId, String texto, TipoEmocion emocion) {
-        return saveMemory(usuarioId, texto, emocion);
-    }
-
-    @Deprecated(forRemoval = false)
-    public List<MemoriaUsuario> obtenerMemorias(Long usuarioId) {
-        return getMemories(usuarioId);
+    public List<UserMemory> getMemories(Long userId) {
+        return memoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

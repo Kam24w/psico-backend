@@ -1,8 +1,8 @@
 package com.psico.app.intervention.service;
 
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.intervention.model.Recomendacion;
-import com.psico.app.intervention.repository.RecomendacionRepository;
+import com.psico.app.emotion.model.EmotionType;
+import com.psico.app.intervention.model.Recommendation;
+import com.psico.app.intervention.repository.RecommendationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,14 +13,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RecommendationService {
 
-    private final RecomendacionRepository recomendacionRepository;
+    private final RecommendationRepository recommendationRepository;
 
-    public List<Recomendacion> obtenerRecomendaciones(TipoEmocion emocion) {
-        return recomendacionRepository.findByEstadoInicialOrderByPrioridadAsc(emocion);
+    public List<Recommendation> getRecommendations(EmotionType emotion) {
+        return recommendationRepository.findByInitialStateOrderByPriorityAsc(emotion);
     }
 
     @Transactional
-    public Recomendacion guardarRecomendacion(Recomendacion recomendacion) {
-        return recomendacionRepository.save(recomendacion);
+    public Recommendation saveRecommendation(Recommendation recommendation) {
+        return recommendationRepository.save(recommendation);
     }
 }

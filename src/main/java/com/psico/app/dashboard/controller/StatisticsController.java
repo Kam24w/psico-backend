@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/estadisticas")
+@RequestMapping({"/api/statistics", "/api/estadisticas"})
 @RequiredArgsConstructor
 public class StatisticsController {
 
     private final DashboardService dashboardService;
 
-    @GetMapping("/{usuarioId}")
-    public ResponseEntity<ApiResponse<DashboardService.DashboardSummary>> obtenerEstadisticas(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(ApiResponse.success("Estadísticas generadas", dashboardService.obtenerResumen(usuarioId)));
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<DashboardService.DashboardSummary>> getStatistics(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success("Estadísticas generadas", dashboardService.getSummary(userId)));
     }
 }

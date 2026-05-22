@@ -18,19 +18,5 @@ public class ConversationResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean active;
-
-    @Deprecated(forRemoval = false)
-    public Long getUsuarioId() {
-        return userId;
-    }
-
-    @Deprecated(forRemoval = false)
-    public Integer getMensajes() {
-        return messageCount;
-    }
-
-    @Deprecated(forRemoval = false)
-    public Boolean getActiva() {
-        return active;
-    }
+    private String type;
 }

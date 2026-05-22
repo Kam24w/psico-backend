@@ -1,6 +1,6 @@
 package com.psico.app.memory.model;
 
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,23 +12,23 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MemoriaUsuario {
+public class UserMemory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    private Long userId;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String texto;
+    private String text;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "emocion_asociada")
-    private TipoEmocion emocionAsociada;
+    private EmotionType associatedEmotion;
 
     @Column(name = "creado_en")
     @Builder.Default
-    private LocalDateTime creadoEn = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

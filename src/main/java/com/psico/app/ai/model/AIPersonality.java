@@ -9,16 +9,16 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PersonalidadIA {
+public class AIPersonality {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String nombre;
+    @Column(name = "nombre", nullable = false)
+    private String name;
 
-    @Column(length = 2000)
-    private String descripcion;
+    @Column(name = "descripcion", length = 2000)
+    private String description;
 
     @Column(name = "system_prompt", length = 5000)
     private String systemPrompt;
@@ -29,5 +29,6 @@ public class PersonalidadIA {
     private Integer maxTokens;
 
     @Builder.Default
-    private boolean activa = true;
+    @Column(name = "activa")
+    private boolean active = true;
 }

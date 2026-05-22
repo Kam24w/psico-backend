@@ -20,36 +20,36 @@ public class AIProviderFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(AIProviderFactory.class);
 
-    private final Map<String, ClienteIA> providers;
+    private final Map<String, AIClient> providers;
     private final String defaultProvider;
 
     public AIProviderFactory(
-            List<ClienteIA> clienteIAList,
+            List<AIClient> aiClientList,
             @Value("${ai.provider:groq}") String defaultProvider
     ) {
         this.defaultProvider = defaultProvider.toLowerCase();
         
-        // Mapea el nombre simple de la clase a la implementación.
-        // Ej: GroqAiAdapter -> groq, GeminiAiAdapter -> gemini
-        this.providers = clienteIAList.stream()
+        // Maps simple class name to implementation.
+        // E.g.: GroqAiAdapter -> groq, GeminiAiAdapter -> gemini
+        this.providers = aiClientList.stream()
                 .collect(Collectors.toMap(
                         client -> extractProviderName(client.getClass().getSimpleName()),
                         Function.identity()
                 ));
                 
-        logger.info("AIProviderFactory inicializado con los proveedores: {}", providers.keySet());
-        logger.info("Proveedor AI por defecto configurado como: {}", this.defaultProvider);
+        logger.info("AIProviderFactory initialized with providers: {}", providers.keySet());
+        logger.info("Default AI provider configured as: {}", this.defaultProvider);
     }
 
-    public ClienteIA getProvider() {
+    public AIClient getProvider() {
         return getProvider(defaultProvider);
     }
 
-    public ClienteIA getProvider(String providerName) {
-        ClienteIA provider = providers.get(providerName.toLowerCase());
+    public AIClient getProvider(String providerName) {
+        AIClient provider = providers.get(providerName.toLowerCase());
         
         if (provider == null) {
-            logger.warn("Proveedor IA '{}' no encontrado. Se utilizará el proveedor por defecto o el primero disponible.", providerName);
+            logger.warn("AI Provider '{}' not found. Using default or first available.", providerName);
             // Fallback
             if (providers.containsKey("groq")) {
                 return providers.get("groq");

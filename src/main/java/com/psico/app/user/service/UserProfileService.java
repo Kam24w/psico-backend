@@ -20,12 +20,12 @@ public class UserProfileService {
                 .orElseGet(() -> {
                     UserProfileEntity userProfile = new UserProfileEntity();
                     userProfile.setUser(user);
-                    userProfile.setPreferencias("[]");
+                    userProfile.setPreferences("[]");
                     return userProfile;
                 });
 
-        String emotionalState = profile.getEstadoEmocionalActual() != null
-                ? profile.getEstadoEmocionalActual().name()
+        String emotionalState = profile.getCurrentEmotionalState() != null
+                ? profile.getCurrentEmotionalState().name()
                 : "NEUTRAL";
 
         return UserProfile.builder()
@@ -33,7 +33,7 @@ public class UserProfileService {
                 .fullName(user.getNombre())
                 .email(user.getEmail())
                 .currentEmotionalState(emotionalState)
-                .preferences(profile.getPreferencias())
+                .preferences(profile.getPreferences())
                 .build();
     }
 
@@ -42,7 +42,7 @@ public class UserProfileService {
         User user = userService.getById(userId);
         UserProfileEntity profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(UserProfileEntity::new);
-        profile.setPreferencias(preferences);
+        profile.setPreferences(preferences);
         profile.setUser(user);
         userProfileRepository.save(profile);
 

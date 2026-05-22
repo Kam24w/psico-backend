@@ -9,9 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
-    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c FROM Conversation c LEFT JOIN FETCH c.mensajes WHERE c.usuario.id = :usuarioId ORDER BY c.updatedAt DESC")
-    List<Conversation> findByUsuarioIdOrderByUpdatedAtDesc(Long usuarioId);
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c FROM Conversation c LEFT JOIN FETCH c.messages WHERE c.user.id = :userId ORDER BY c.updatedAt DESC")
+    List<Conversation> findByUserIdOrderByUpdatedAtDesc(Long userId);
 
-    Optional<Conversation> findFirstByUsuarioIdAndActivaTrue(Long usuarioId);
-    Optional<Conversation> findFirstByUsuarioIdAndActivaTrueAndTipo(Long usuarioId, String tipo);
+    Optional<Conversation> findFirstByUserIdAndActiveTrue(Long userId);
+    Optional<Conversation> findFirstByUserIdAndActiveTrueAndType(Long userId, String type);
 }

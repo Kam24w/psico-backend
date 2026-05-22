@@ -11,22 +11,22 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlertaRiesgo {
+public class RiskAlert {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "nivel")
-    private NivelRiesgo nivel;
+    private RiskLevel level;
 
     @Column(name = "razon", columnDefinition = "TEXT")
-    private String razon;
+    private String reason;
 
     @Column(name = "creado_en")
-    private LocalDateTime creadoEn;
+    private LocalDateTime createdAt;
 }

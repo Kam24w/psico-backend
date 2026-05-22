@@ -11,26 +11,26 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MemoriaContexto {
+public class ContextMemory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private User usuario;
+    private User user;
 
-    @Column(columnDefinition = "TEXT")
-    private String clave;
+    @Column(name = "clave", columnDefinition = "TEXT")
+    private String key;
 
-    @Column(columnDefinition = "TEXT")
-    private String valor;
+    @Column(name = "valor", columnDefinition = "TEXT")
+    private String value;
 
     @Column(name = "fecha_creacion")
-    private LocalDateTime fechaCreacion;
+    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        fechaCreacion = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
     }
 }

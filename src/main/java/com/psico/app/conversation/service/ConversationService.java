@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psico.app.ai.dto.AiResponse;
-import com.psico.app.ai.service.ServicioIA;
+import com.psico.app.ai.service.AIService;
 import com.psico.app.auth.model.User;
 import com.psico.app.conversation.model.Conversation;
 import com.psico.app.conversation.model.Message;
 import com.psico.app.conversation.repository.ConversationRepository;
 import com.psico.app.conversation.repository.MessageRepository;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import com.psico.app.emotion.service.EmotionService;
 import com.psico.app.user.service.UserService;
 
@@ -28,26 +28,26 @@ public class ConversationService {
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
-    private final ServicioIA servicioIA;
+    private final AIService aiService;
     private final EmotionService emotionService;
     private final UserService userService;
 
-    // ── Guardar mensaje de usuario (public para EmotionPipelineFacade) ──────
+    // ── Save user message ──────
     @Transactional
-    public Conversation obtainAndStoreUserMessage(User user, String content, TipoEmocion detectedEmotion) {
+    public Conversation obtainAndStoreUserMessage(User user, String content, EmotionType detectedEmotion) {
         return obtainAndStoreUserMessage(user, content, detectedEmotion, "TEXTO");
     }
 
     @Transactional
-    public Conversation obtainAndStoreUserMessage(User user, String content, TipoEmocion detectedEmotion, String tipo) {
+    public Conversation obtainAndStoreUserMessage(User user, String content, EmotionType detectedEmotion, String type) {
         Conversation conversation = conversationRepository
-                .findFirstByUsuarioIdAndActivaTrueAndTipo(user.getId(), tipo)
-                .orElseGet(() -> createNewConversation(user, tipo));
+                .findFirstByUserIdAndActiveTrueAndType(user.getId(), type)
+                .orElseGet(() -> createNewConversation(user, type));
 
         Message userMessage = Objects.requireNonNull(Message.builder()
-                .contenido(content)
-                .remitente(Message.Remitente.USER)
-                .emocionAsociada(toTipoEmocion(detectedEmotion))
+                .content(content)
+                .sender(Message.Sender.USER)
+                .associatedEmotion(detectedEmotion)
                 .conversation(conversation)
                 .build());
         messageRepository.save(userMessage);
@@ -56,40 +56,40 @@ public class ConversationService {
         return conversationRepository.save(Objects.requireNonNull(conversation));
     }
 
-    // ── Guardar respuesta de la IA (public para EmotionPipelineFacade) ──────
+    // ── Save AI response ──────
     @Transactional
-    public Message storeAiResponse(Conversation conversation, AiResponse aiResponse, TipoEmocion emotion) {
+    public Message storeAiResponse(Conversation conversation, AiResponse aiResponse, EmotionType emotion) {
         Message message = Objects.requireNonNull(Message.builder()
-                .contenido(aiResponse.getCleaned())
-                .rawContenido(aiResponse.getRaw())
-                .remitente(Message.Remitente.AI)
-                .emocionAsociada(toTipoEmocion(emotion))
+                .content(aiResponse.getCleaned())
+                .rawContent(aiResponse.getRaw())
+                .sender(Message.Sender.AI)
+                .associatedEmotion(emotion)
                 .conversation(conversation)
                 .build());
         return Objects.requireNonNull(messageRepository.save(message));
     }
 
-    // ── Sincronizar mensajes (VIDEO/TEXTO) ───────────────────────────────────
+    // ── Sync messages (VIDEO/TEXTO) ───────────────────────────────────
     @Transactional
-    public List<Message> syncMessages(@NonNull Long userId, String userContent, String aiContent, TipoEmocion emotion, String tipo) {
+    public List<Message> syncMessages(@NonNull Long userId, String userContent, String aiContent, EmotionType emotion, String type) {
         User user = userService.getById(userId);
         Conversation conversation = conversationRepository
-                .findFirstByUsuarioIdAndActivaTrueAndTipo(user.getId(), tipo)
-                .orElseGet(() -> createNewConversation(user, tipo));
+                .findFirstByUserIdAndActiveTrueAndType(user.getId(), type)
+                .orElseGet(() -> createNewConversation(user, type));
 
         Message userMessage = Objects.requireNonNull(Message.builder()
-                .contenido(userContent)
-                .remitente(Message.Remitente.USER)
-                .emocionAsociada(toTipoEmocion(emotion))
+                .content(userContent)
+                .sender(Message.Sender.USER)
+                .associatedEmotion(emotion)
                 .conversation(conversation)
                 .build());
         messageRepository.save(userMessage);
 
         Message aiMessage = Objects.requireNonNull(Message.builder()
-                .contenido(aiContent)
-                .rawContenido(aiContent)
-                .remitente(Message.Remitente.AI)
-                .emocionAsociada(toTipoEmocion(emotion))
+                .content(aiContent)
+                .rawContent(aiContent)
+                .sender(Message.Sender.AI)
+                .associatedEmotion(emotion)
                 .conversation(conversation)
                 .build());
         messageRepository.save(aiMessage);
@@ -100,49 +100,48 @@ public class ConversationService {
         return List.of(userMessage, aiMessage);
     }
 
-    // ── Historial ────────────────────────────────────────────────────────────
+    // ── History ────────────────────────────────────────────────────────────
     public List<Message> getConversationHistory(@NonNull Long conversationId) {
-        return messageRepository.findByConversationIdOrderByFechaAsc(conversationId);
+        return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
     }
 
-    /** Compatibilidad con EmotionPipelineFacade de main (sin tipoSesion) */
     public List<Message> getActiveUserHistory(@NonNull Long userId) {
         return getActiveUserHistory(userId, "TEXTO");
     }
 
-    public List<Message> getActiveUserHistory(@NonNull Long userId, String tipo) {
-        return conversationRepository.findFirstByUsuarioIdAndActivaTrueAndTipo(userId, tipo)
-                .map(conversation -> messageRepository.findByConversationIdOrderByFechaAsc(conversation.getId()))
+    public List<Message> getActiveUserHistory(@NonNull Long userId, String type) {
+        return conversationRepository.findFirstByUserIdAndActiveTrueAndType(userId, type)
+                .map(conversation -> messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId()))
                 .orElse(List.of());
     }
 
     public List<Conversation> getUserConversations(@NonNull Long userId) {
-        return conversationRepository.findByUsuarioIdOrderByUpdatedAtDesc(userId);
+        return conversationRepository.findByUserIdOrderByUpdatedAtDesc(userId);
     }
 
-    // ── Iniciar conversación (saludo inicial IA) ─────────────────────────────
+    // ── Initiate conversation (initial AI greeting) ─────────────────────────────
     @Transactional
-    public Message initiateConversation(@NonNull Long userId, TipoEmocion emotion) {
+    public Message initiateConversation(@NonNull Long userId, EmotionType emotion) {
         return initiateConversation(userId, emotion, "TEXTO");
     }
 
     @Transactional
-    public Message initiateConversation(@NonNull Long userId, TipoEmocion emotion, String tipo) {
+    public Message initiateConversation(@NonNull Long userId, EmotionType emotion, String type) {
         User user = userService.getById(userId);
         Conversation conversation = conversationRepository
-                .findFirstByUsuarioIdAndActivaTrueAndTipo(user.getId(), tipo)
-                .orElseGet(() -> createNewConversation(user, tipo));
+                .findFirstByUserIdAndActiveTrueAndType(user.getId(), type)
+                .orElseGet(() -> createNewConversation(user, type));
 
-        AiResponse aiGreeting = servicioIA.generateInitialGreeting(userId, user.getNombre(), emotion);
+        AiResponse aiGreeting = aiService.generateInitialGreeting(userId, user.getNombre(), emotion);
 
         return storeAiResponse(conversation, aiGreeting, emotion);
     }
 
-    // ── Cerrar / Eliminar sesión ─────────────────────────────────────────────
+    // ── Close / Delete session ─────────────────────────────────────────────
     @Transactional
-    public void closeActiveSession(Long userId, String tipo) {
-        conversationRepository.findFirstByUsuarioIdAndActivaTrueAndTipo(userId, tipo).ifPresent(conv -> {
-            conv.setActiva(false);
+    public void closeActiveSession(Long userId, String type) {
+        conversationRepository.findFirstByUserIdAndActiveTrueAndType(userId, type).ifPresent(conv -> {
+            conv.setActive(false);
             conversationRepository.save(conv);
         });
     }
@@ -152,36 +151,16 @@ public class ConversationService {
         conversationRepository.deleteById(conversationId);
     }
 
-    // ── Utilidades ───────────────────────────────────────────────────────────
+    // ── Utilities ───────────────────────────────────────────────────────────
     public User getUserByEmail(String email) {
         return userService.getByEmail(email);
     }
 
-    private TipoEmocion toTipoEmocion(TipoEmocion emotionType) {
-        return emotionType;
-    }
-
-    private Conversation createNewConversation(User user, String tipo) {
+    private Conversation createNewConversation(User user, String type) {
         Conversation newConversation = Objects.requireNonNull(Conversation.builder()
-                .usuario(user)
-                .tipo(tipo)
+                .user(user)
+                .type(type)
                 .build());
         return Objects.requireNonNull(conversationRepository.save(newConversation));
-    }
-
-    // ── Aliases deprecated (compatibilidad hacia atrás) ──────────────────────
-    @Deprecated(forRemoval = false)
-    public List<Message> obtenerHistorial(@NonNull Long conversacionId) {
-        return getConversationHistory(conversacionId);
-    }
-
-    @Deprecated(forRemoval = false)
-    public List<Message> obtenerHistorialActivoUsuario(@NonNull Long usuarioId) {
-        return getActiveUserHistory(usuarioId, "TEXTO");
-    }
-
-    @Deprecated(forRemoval = false)
-    public List<Conversation> obtenerConversacionesDeUsuario(@NonNull Long usuarioId) {
-        return getUserConversations(usuarioId);
     }
 }
