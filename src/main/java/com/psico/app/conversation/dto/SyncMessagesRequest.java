@@ -1,7 +1,7 @@
 package com.psico.app.conversation.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,12 +29,8 @@ public class SyncMessagesRequest {
     private String aiContent;
 
     @JsonAlias("emocion")
-    private TipoEmocion emotion;
+    private EmotionType emotion;
     
-    @JsonAlias("tipoSesion")
-    private String tipoSesion = "TEXTO";
-
-    public Long getUsuarioId() {
-        return userId;
-    }
+    @JsonAlias({"tipoSesion", "sessionType"})
+    private String sessionType = "TEXTO";
 }

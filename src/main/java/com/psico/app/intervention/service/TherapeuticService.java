@@ -1,7 +1,7 @@
 package com.psico.app.intervention.service;
 
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.intervention.model.Recomendacion;
+import com.psico.app.emotion.model.EmotionType;
+import com.psico.app.intervention.model.Recommendation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +13,7 @@ public class TherapeuticService {
 
     private final RecommendationService recommendationService;
 
-    public List<Recomendacion> sugerirEjercicios(TipoEmocion emocion) {
-        return recommendationService.obtenerRecomendaciones(emocion);
+    public List<Recommendation> suggestExercises(EmotionType emotion) {
+        return recommendationService.getRecommendations(emotion);
     }
 }

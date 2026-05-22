@@ -1,7 +1,8 @@
 package com.psico.app.support.controller;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.psico.app.common.response.ApiResponse;
-import com.psico.app.risk.model.NivelRiesgo;
+import com.psico.app.risk.model.RiskLevel;
 import com.psico.app.support.service.SupportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +15,16 @@ public class SupportController {
 
     private final SupportService supportService;
 
-    @PostMapping("/{usuarioId}/escalar")
-    public ResponseEntity<ApiResponse<SupportService.SupportTicket>> escalarCaso(
-            @PathVariable Long usuarioId,
+    @PostMapping({"/{userId}/escalate", "/{userId}/escalar"})
+    public ResponseEntity<ApiResponse<SupportService.SupportTicket>> escalateCase(
+            @PathVariable Long userId,
             @RequestBody SupportRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Caso escalado", supportService.escalarCaso(usuarioId, request.razon(), request.nivelRiesgo())));
+        return ResponseEntity.ok(ApiResponse.success("Caso escalado", supportService.escalateCase(userId, request.reason(), request.riskLevel())));
     }
 
-    public record SupportRequest(String razon, NivelRiesgo nivelRiesgo) {}
+    public record SupportRequest(
+            @JsonAlias({"razon", "reason"}) String reason,
+            @JsonAlias({"nivelRiesgo", "riskLevel"}) RiskLevel riskLevel
+    ) {}
 }

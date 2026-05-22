@@ -21,11 +21,11 @@ public class Conversation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private User usuario;
+    private User user;
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Message> mensajes = new ArrayList<>();
+    private List<Message> messages = new ArrayList<>();
 
     @Column(name = "created_at")
     @Builder.Default
@@ -37,14 +37,14 @@ public class Conversation {
 
     @Column(name = "activa")
     @Builder.Default
-    private Boolean activa = true;
+    private Boolean active = true;
 
     @Column(name = "tipo")
     @Builder.Default
-    private String tipo = "TEXTO"; // TEXTO o VIDEO
+    private String type = "TEXTO"; // TEXTO o VIDEO
 
-    public void agregarMensaje(Message message) {
-        this.mensajes.add(message);
+    public void addMessage(Message message) {
+        this.messages.add(message);
         this.updatedAt = LocalDateTime.now();
     }
 }

@@ -1,7 +1,7 @@
 package com.psico.app.user.model;
 
 import com.psico.app.auth.model.User;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -35,10 +35,9 @@ public class UserProfileEntity {
     private User user;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
     @Column(name = "estado_emocional_actual")
-    private TipoEmocion estadoEmocionalActual = TipoEmocion.NEUTRAL;
+    private EmotionType currentEmotionalState = EmotionType.NEUTRAL;
 
-    @Column(columnDefinition = "TEXT")
-    private String preferencias;
+    @Column(name = "preferencias", columnDefinition = "TEXT")
+    private String preferences;
 }

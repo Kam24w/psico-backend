@@ -12,35 +12,36 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AlertaSeguridad {
+public class SecurityAlert {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private User usuario;
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mensaje_id")
-    private Message mensaje;
+    private Message message;
 
-    @Column(nullable = false)
-    private String tipo; // ej: "SUICIDIO", "AUTOLESION", "VIOLENCIA"
+    @Column(name = "tipo", nullable = false)
+    private String type; // ej: "SUICIDIO", "AUTOLESION", "VIOLENCIA"
 
-    @Column(nullable = false)
-    private Integer nivelRiesgo; // 1-10
+    @Column(name = "nivel_riesgo", nullable = false)
+    private Integer riskLevel; // 1-10
 
-    @Column(columnDefinition = "TEXT")
-    private String fragmentoDetectado;
+    @Column(name = "fragmento_detectado", columnDefinition = "TEXT")
+    private String detectedSnippet;
 
-    private LocalDateTime fechaDeteccion;
+    @Column(name = "fecha_deteccion")
+    private LocalDateTime detectedAt;
 
     @Builder.Default
-    private boolean revisada = false;
+    private boolean reviewed = false;
 
     @PrePersist
     protected void onCreate() {
-        fechaDeteccion = LocalDateTime.now();
+        detectedAt = LocalDateTime.now();
     }
 }

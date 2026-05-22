@@ -10,31 +10,31 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.psico.app.common.response.ApiResponse;
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.risk.model.AlertaRiesgo;
-import com.psico.app.risk.model.NivelRiesgo;
+import com.psico.app.emotion.model.EmotionType;
+import com.psico.app.risk.model.RiskAlert;
+import com.psico.app.risk.model.RiskLevel;
 import com.psico.app.risk.service.RiskService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping({"/api/risk", "/api/riesgo"})
+@RequestMapping("/api/risk")
 @RequiredArgsConstructor
 public class RiskController {
 
     private final RiskService riskService;
 
-    @GetMapping({"/{userId}/evaluate", "/{userId}/evalua"})
-    public ResponseEntity<ApiResponse<NivelRiesgo>> evaluateRisk(
+    @GetMapping("/{userId}/evaluate")
+    public ResponseEntity<ApiResponse<RiskLevel>> evaluateRisk(
             @PathVariable Long userId,
-            @RequestParam TipoEmocion emotion,
+            @RequestParam EmotionType emotion,
             @RequestParam String message
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Risk evaluated", riskService.evaluarRiesgo(userId, emotion, message)));
+        return ResponseEntity.ok(ApiResponse.success("Risk evaluated", riskService.evaluateRisk(userId, emotion, message)));
     }
 
-    @GetMapping({"/{userId}/alerts", "/{userId}/alertas"})
-    public ResponseEntity<ApiResponse<List<AlertaRiesgo>>> getAlerts(@PathVariable Long userId) {
-        return ResponseEntity.ok(ApiResponse.success("Alerts retrieved", riskService.obtenerAlertas(userId)));
+    @GetMapping("/{userId}/alerts")
+    public ResponseEntity<ApiResponse<List<RiskAlert>>> getAlerts(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success("Alerts retrieved", riskService.getAlerts(userId)));
     }
 }

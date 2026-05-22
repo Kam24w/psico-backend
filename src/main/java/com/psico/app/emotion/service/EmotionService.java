@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.psico.app.auth.model.User;
 import com.psico.app.emotion.model.Emotion;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import com.psico.app.emotion.repository.EmotionRepository;
 import com.psico.app.user.service.UserService;
 
@@ -21,12 +21,12 @@ public class EmotionService {
     private final EmotionRepository emotionRepository;
     private final UserService userService;
 
-    public Emotion registerEmotion(Long userId, TipoEmocion emotionType, Double intensity) {
+    public Emotion registerEmotion(Long userId, EmotionType emotionType, Double intensity) {
         User user = userService.getById(userId);
 
         Emotion emotion = Emotion.builder()
-                .tipo(emotionType)
-                .intensidad(intensity)
+                .type(emotionType)
+                .intensity(intensity)
                 .user(user)
                 .build();
 
@@ -37,9 +37,9 @@ public class EmotionService {
         return saved;
     }
 
-    public TipoEmocion getLatestEmotion(Long userId) {
+    public EmotionType getLatestEmotion(Long userId) {
         Emotion latest = emotionRepository.findLatestEmotionByUserId(userId);
-        return latest != null ? latest.getTipo() : TipoEmocion.NEUTRAL;
+        return latest != null ? latest.getType() : EmotionType.NEUTRAL;
     }
 
     public List<Emotion> getEmotionHistory(Long userId) {

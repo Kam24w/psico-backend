@@ -20,8 +20,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String nombre;
+    @Column(name = "nombre", nullable = false)
+    private String name;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -30,9 +30,9 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "rol", nullable = false)
     @Builder.Default
-    private Rol rol = Rol.USER;
+    private Role role = Role.USER;
 
     @Column(name = "created_at")
     @Builder.Default

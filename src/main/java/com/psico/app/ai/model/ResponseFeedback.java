@@ -10,17 +10,18 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FeedbackRespuesta {
+public class ResponseFeedback {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mensaje_id", nullable = false)
-    private Message mensaje;
+    private Message message;
 
-    @Column(nullable = false)
-    private Integer puntuacion; // 1-5 o pulgar arriba/abajo
+    @Column(name = "puntuacion", nullable = false)
+    private Integer score; // 1-5 or thumbs up/down
 
-    private String comentario;
+    @Column(name = "comentario")
+    private String comment;
 }

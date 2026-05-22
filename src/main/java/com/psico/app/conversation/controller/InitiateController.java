@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.psico.app.auth.model.User;
 import com.psico.app.common.response.ApiResponse;
-import com.psico.app.conversation.dto.MensajeResponse;
+import com.psico.app.conversation.dto.MessageResponse;
 import com.psico.app.conversation.model.Message;
 import com.psico.app.conversation.service.ConversationService;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import com.psico.app.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,33 +30,33 @@ public class InitiateController {
     private final UserService userService;
 
     @PostMapping("/initiate")
-    public ResponseEntity<ApiResponse<MensajeResponse>> initiateConversation(Principal principal, @RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<MessageResponse>> initiateConversation(Principal principal, @RequestBody Map<String, String> body) {
         String email = principal.getName();
         User user = userService.getByEmail(email);
         
         String emotionStr = body.getOrDefault("emotion", "NEUTRAL");
-        TipoEmocion emotion;
+        EmotionType emotion;
         try {
-            emotion = TipoEmocion.valueOf(emotionStr.toUpperCase());
+            emotion = EmotionType.valueOf(emotionStr.toUpperCase());
         } catch (Exception e) {
-            emotion = TipoEmocion.NEUTRAL;
+            emotion = EmotionType.NEUTRAL;
         }
 
         log.info("Initiating voice conversation for user: {} with emotion: {}", email, emotion);
 
-        String tipo = body.getOrDefault("tipo", "VIDEO");
-        Message greeting = conversationService.initiateConversation(user.getId(), emotion, tipo);
+        String type = body.getOrDefault("tipo", "VIDEO");
+        Message greeting = conversationService.initiateConversation(user.getId(), emotion, type);
         
-        MensajeResponse response = MensajeResponse.builder()
+        MessageResponse response = MessageResponse.builder()
                 .id(greeting.getId())
-                .content(greeting.getContenido())
-                .rawContent(greeting.getRawContenido())
+                .content(greeting.getContent())
+                .rawContent(greeting.getRawContent())
                 .sender("AI")
-                .associatedEmotion(greeting.getEmocionAsociada())
-                .createdAt(greeting.getFecha())
+                .associatedEmotion(greeting.getAssociatedEmotion())
+                .createdAt(greeting.getCreatedAt())
                 .build();
 
-        String debugInfo = greeting.getRawContenido() != null ? " [RAW_OK]" : " [RAW_NULL]";
+        String debugInfo = greeting.getRawContent() != null ? " [RAW_OK]" : " [RAW_NULL]";
         return ResponseEntity.ok(ApiResponse.success("Initial greeting generated" + debugInfo, response));
     }
 }

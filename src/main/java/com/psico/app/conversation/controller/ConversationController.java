@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.psico.app.ai.facade.EmotionPipelineFacade;
 import com.psico.app.common.response.ApiResponse;
-import com.psico.app.conversation.dto.ConversacionResponse;
-import com.psico.app.conversation.dto.MensajeRequest;
-import com.psico.app.conversation.dto.MensajeResponse;
+import com.psico.app.conversation.dto.ConversationResponse;
+import com.psico.app.conversation.dto.MessageRequest;
+import com.psico.app.conversation.dto.MessageResponse;
 import com.psico.app.conversation.dto.SyncMessagesRequest;
 import com.psico.app.conversation.model.Conversation;
 import com.psico.app.conversation.model.Message;
@@ -38,34 +38,34 @@ public class ConversationController {
      * Envía un mensaje de texto. Usa el pipeline de IA (EmotionPipelineFacade)
      * y aísla la conversación según tipoSesion (TEXTO o VIDEO).
      */
-    @PostMapping({"/message", "/mensaje"})
-    public ResponseEntity<ApiResponse<MensajeResponse>> sendMessage(@Valid @RequestBody MensajeRequest request) {
-        String tipoSesion = request.getTipoSesion() != null ? request.getTipoSesion() : "TEXTO";
-        Message response = pipelineFacade.ejecutarPipeline(
-                Objects.requireNonNull(request.getUsuarioId()),
-                request.getContenido(),
-                request.getEmocion(),
-                tipoSesion
+    @PostMapping("/message")
+    public ResponseEntity<ApiResponse<MessageResponse>> sendMessage(@Valid @RequestBody MessageRequest request) {
+        String sessionType = request.getSessionType() != null ? request.getSessionType() : "TEXTO";
+        Message response = pipelineFacade.executePipeline(
+                Objects.requireNonNull(request.getUserId()),
+                request.getContent(),
+                request.getEmotion(),
+                sessionType
         );
         return ResponseEntity.ok(ApiResponse.success("Message processed", convertToResponse(response)));
     }
 
     @PostMapping("/sync")
-    public ResponseEntity<ApiResponse<List<MensajeResponse>>> syncMessages(@Valid @RequestBody SyncMessagesRequest request) {
+    public ResponseEntity<ApiResponse<List<MessageResponse>>> syncMessages(@Valid @RequestBody SyncMessagesRequest request) {
         List<Message> savedMessages = conversationService.syncMessages(
-                Objects.requireNonNull(request.getUsuarioId()),
+                Objects.requireNonNull(request.getUserId()),
                 request.getUserContent(),
                 request.getAiContent(),
                 request.getEmotion(),
-                request.getTipoSesion() != null ? request.getTipoSesion() : "TEXTO"
+                request.getSessionType() != null ? request.getSessionType() : "TEXTO"
         );
         return ResponseEntity.ok(ApiResponse.success("Messages synced successfully", savedMessages.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList())));
     }
 
-    @GetMapping({"/history/{conversationId}", "/historial/{conversationId}"})
-    public ResponseEntity<ApiResponse<List<MensajeResponse>>> getHistory(@PathVariable @NonNull Long conversationId) {
+    @GetMapping("/history/{conversationId}")
+    public ResponseEntity<ApiResponse<List<MessageResponse>>> getHistory(@PathVariable @NonNull Long conversationId) {
         List<Message> history = conversationService.getConversationHistory(conversationId);
         return ResponseEntity.ok(ApiResponse.success("History retrieved", history.stream()
                 .map(this::convertToResponse)
@@ -73,18 +73,18 @@ public class ConversationController {
     }
 
     @GetMapping("/active-history")
-    public ResponseEntity<ApiResponse<List<MensajeResponse>>> getActiveHistory(
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "TEXTO") String tipoSesion,
+    public ResponseEntity<ApiResponse<List<MessageResponse>>> getActiveHistory(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "TEXTO") String sessionType,
             java.security.Principal principal) {
         com.psico.app.auth.model.User user = conversationService.getUserByEmail(principal.getName());
-        List<Message> history = conversationService.getActiveUserHistory(user.getId(), tipoSesion);
+        List<Message> history = conversationService.getActiveUserHistory(user.getId(), sessionType);
         return ResponseEntity.ok(ApiResponse.success("Active session history retrieved", history.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList())));
     }
 
-    @GetMapping({"/user/{userId}", "/usuario/{userId}"})
-    public ResponseEntity<ApiResponse<List<ConversacionResponse>>> getUserConversations(@PathVariable @NonNull Long userId) {
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<List<ConversationResponse>>> getUserConversations(@PathVariable @NonNull Long userId) {
         return ResponseEntity.ok(ApiResponse.success("Conversations retrieved", conversationService.getUserConversations(userId).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList())));
@@ -93,8 +93,8 @@ public class ConversationController {
     @PostMapping("/active/close")
     public ResponseEntity<ApiResponse<Void>> closeActiveSession(
             @org.springframework.web.bind.annotation.RequestParam Long userId,
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "TEXTO") String tipoSesion) {
-        conversationService.closeActiveSession(userId, tipoSesion);
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "TEXTO") String sessionType) {
+        conversationService.closeActiveSession(userId, sessionType);
         return ResponseEntity.ok(ApiResponse.success("Active session closed successfully", null));
     }
 
@@ -104,26 +104,26 @@ public class ConversationController {
         return ResponseEntity.ok(ApiResponse.success("Session deleted successfully", null));
     }
 
-    private MensajeResponse convertToResponse(Message mensaje) {
-        return MensajeResponse.builder()
-                .id(mensaje.getId())
-                .content(mensaje.getContenido())
-                .rawContent(mensaje.getRawContenido())
-                .sender(mensaje.getRemitente().name())
-                .associatedEmotion(mensaje.getEmocionAsociada())
-                .createdAt(mensaje.getFecha())
+    private MessageResponse convertToResponse(Message message) {
+        return MessageResponse.builder()
+                .id(message.getId())
+                .content(message.getContent())
+                .rawContent(message.getRawContent())
+                .sender(message.getSender().name())
+                .associatedEmotion(message.getAssociatedEmotion())
+                .createdAt(message.getCreatedAt())
                 .build();
     }
 
-    private ConversacionResponse convertToResponse(Conversation conversacion) {
-        return ConversacionResponse.builder()
-                .id(conversacion.getId())
-                .userId(conversacion.getUsuario().getId())
-                .messageCount(conversacion.getMensajes() != null ? conversacion.getMensajes().size() : 0)
-                .createdAt(conversacion.getCreatedAt())
-                .updatedAt(conversacion.getUpdatedAt())
-                .active(conversacion.getActiva())
-                .tipo(conversacion.getTipo())
+    private ConversationResponse convertToResponse(Conversation conversation) {
+        return ConversationResponse.builder()
+                .id(conversation.getId())
+                .userId(conversation.getUser().getId())
+                .messageCount(conversation.getMessages() != null ? conversation.getMessages().size() : 0)
+                .createdAt(conversation.getCreatedAt())
+                .updatedAt(conversation.getUpdatedAt())
+                .active(conversation.getActive())
+                .type(conversation.getType())
                 .build();
     }
 }

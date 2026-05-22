@@ -19,7 +19,7 @@ import org.springframework.web.client.RestTemplate;
  * Implementa el puerto ClienteIA como alternativa a Groq.
  */
 @Component
-public class GeminiAiAdapter implements ClienteIA {
+public class GeminiAiAdapter implements AIClient {
 
     private static final Logger logger = LoggerFactory.getLogger(GeminiAiAdapter.class);
 
@@ -32,12 +32,12 @@ public class GeminiAiAdapter implements ClienteIA {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public String enviarMensaje(String systemPrompt, String userMessage) {
-        return enviarMensajeConRiesgo(systemPrompt, userMessage, 0);
+    public String sendMessage(String systemPrompt, String userMessage) {
+        return sendMessageWithRisk(systemPrompt, userMessage, 0);
     }
 
     @Override
-    public String enviarMensajeConRiesgo(String systemPrompt, String userMessage, int nivelRiesgo) {
+    public String sendMessageWithRisk(String systemPrompt, String userMessage, int riskLevel) {
         if (apiKey == null || apiKey.isBlank() || "sin-configurar".equals(apiKey)) {
             logger.error("No se configuró GEMINI_API_KEY. La IA no puede responder.");
             return "La IA no está configurada en este entorno. Falta GEMINI_API_KEY.";
@@ -64,13 +64,13 @@ public class GeminiAiAdapter implements ClienteIA {
             ),
             "generationConfig", Map.of(
                 "maxOutputTokens", 512,
-                "temperature", nivelRiesgo > 0 ? 0.7 : 1.0
+                "temperature", riskLevel > 0 ? 0.7 : 1.0
             )
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-        logger.info("=== GEMINI API CALL to: {} | nivelRiesgo: {} ===", apiUrl, nivelRiesgo);
+        logger.info("=== GEMINI API CALL to: {} | riskLevel: {} ===", apiUrl, riskLevel);
         try {
             ResponseEntity<Object> response = restTemplate.postForEntity(urlConKey, request, Object.class);
 

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.psico.app.common.response.ApiResponse;
 import com.psico.app.emotion.model.Emotion;
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import com.psico.app.emotion.service.EmotionService;
 
 import jakarta.validation.Valid;
@@ -41,7 +41,7 @@ public class EmotionController {
     }
 
     @GetMapping("/latest/{userId}")
-    public ResponseEntity<ApiResponse<TipoEmocion>> getLatestEmotion(@PathVariable @NonNull Long userId) {
+    public ResponseEntity<ApiResponse<EmotionType>> getLatestEmotion(@PathVariable @NonNull Long userId) {
         return ResponseEntity.ok(ApiResponse.success("Latest emotion retrieved", emotionService.getLatestEmotion(userId)));
     }
 
@@ -58,7 +58,7 @@ public class EmotionController {
 
         @NotNull
         @JsonAlias("tipo")
-        private TipoEmocion emotionType;
+        private EmotionType emotionType;
 
         @NotNull
         @JsonAlias("intensidad")

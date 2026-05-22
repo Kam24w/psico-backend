@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.psico.app.common.response.ApiResponse;
-import com.psico.app.emotion.model.TipoEmocion;
-import com.psico.app.memory.model.MemoriaUsuario;
+import com.psico.app.emotion.model.EmotionType;
+import com.psico.app.memory.model.UserMemory;
 import com.psico.app.memory.service.MemoryService;
 
 import jakarta.validation.Valid;
@@ -22,14 +22,14 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping({"/api/memories", "/api/memoria"})
+@RequestMapping("/api/memories")
 @RequiredArgsConstructor
 public class MemoryController {
 
     private final MemoryService memoryService;
 
     @PostMapping("/{userId}")
-    public ResponseEntity<ApiResponse<MemoriaUsuario>> saveMemory(
+    public ResponseEntity<ApiResponse<UserMemory>> saveMemory(
             @PathVariable Long userId,
             @Valid @RequestBody MemoryRequest request
     ) {
@@ -38,12 +38,12 @@ public class MemoryController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<List<MemoriaUsuario>>> getMemories(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<List<UserMemory>>> getMemories(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success("Memories retrieved", memoryService.getMemories(userId)));
     }
 
     public record MemoryRequest(
             @NotBlank @JsonAlias("texto") String content,
-            @NotNull @JsonAlias("emocionAsociada") TipoEmocion associatedEmotion
+            @NotNull @JsonAlias("emocionAsociada") EmotionType associatedEmotion
     ) {}
 }

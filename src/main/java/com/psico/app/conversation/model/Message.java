@@ -1,6 +1,6 @@
 package com.psico.app.conversation.model;
 
-import com.psico.app.emotion.model.TipoEmocion;
+import com.psico.app.emotion.model.EmotionType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,19 +17,18 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String contenido;
+    @Column(name = "contenido", columnDefinition = "TEXT", nullable = false)
+    private String content;
 
     @Column(name = "raw_contenido", columnDefinition = "TEXT")
-    private String rawContenido;
+    private String rawContent;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "remitente")
-    private Remitente remitente; // USER o AI
+    private Sender sender; // USER or AI
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "emocion_asociada")
-    private TipoEmocion emocionAsociada;
+    private com.psico.app.emotion.model.EmotionType associatedEmotion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversacion_id", nullable = false)
@@ -37,9 +36,9 @@ public class Message {
 
     @Column(name = "fecha")
     @Builder.Default
-    private LocalDateTime fecha = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public enum Remitente {
+    public enum Sender {
         USER, AI
     }
 }
