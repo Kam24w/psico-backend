@@ -76,7 +76,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(token)
                 .userId(user.getId())
-                .name(user.getNombre())
+                .name(user.getName())
                 .email(user.getEmail())
                 .rol(user.getRole().name())
                 .build();
@@ -99,7 +99,7 @@ public class AuthService {
         }
 
         User user = User.builder()
-                .nombre(request.getName())
+                .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
@@ -111,7 +111,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(token)
                 .userId(user.getId())
-                .name(user.getNombre())
+                .name(user.getName())
                 .email(user.getEmail())
                 .rol(user.getRole().name())
                 .build();

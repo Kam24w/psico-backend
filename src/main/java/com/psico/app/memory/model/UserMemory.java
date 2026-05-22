@@ -21,10 +21,9 @@ public class UserMemory {
     @Column(name = "usuario_id", nullable = false)
     private Long userId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(name = "texto", columnDefinition = "TEXT", nullable = false)
     private String text;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "emocion_asociada")
     private EmotionType associatedEmotion;
 

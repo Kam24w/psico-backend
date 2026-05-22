@@ -22,7 +22,6 @@ public class Emotion {
     private Long id;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
     @Column(name = "tipo", nullable = false)
     private EmotionType type;
 

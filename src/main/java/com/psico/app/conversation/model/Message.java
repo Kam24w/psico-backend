@@ -27,7 +27,6 @@ public class Message {
     @Column(name = "remitente")
     private Sender sender; // USER or AI
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "emocion_asociada")
     private com.psico.app.emotion.model.EmotionType associatedEmotion;
 

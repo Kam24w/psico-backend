@@ -132,7 +132,7 @@ public class ConversationService {
                 .findFirstByUserIdAndActiveTrueAndType(user.getId(), type)
                 .orElseGet(() -> createNewConversation(user, type));
 
-        AiResponse aiGreeting = aiService.generateInitialGreeting(userId, user.getNombre(), emotion);
+        AiResponse aiGreeting = aiService.generateInitialGreeting(userId, user.getName(), emotion);
 
         return storeAiResponse(conversation, aiGreeting, emotion);
     }

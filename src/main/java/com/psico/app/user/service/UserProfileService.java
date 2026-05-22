@@ -30,7 +30,7 @@ public class UserProfileService {
 
         return UserProfile.builder()
                 .userId(user.getId())
-                .fullName(user.getNombre())
+                .fullName(user.getName())
                 .email(user.getEmail())
                 .currentEmotionalState(emotionalState)
                 .preferences(profile.getPreferences())

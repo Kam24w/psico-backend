@@ -35,7 +35,6 @@ public class UserProfileEntity {
     private User user;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
     @Column(name = "estado_emocional_actual")
     private EmotionType currentEmotionalState = EmotionType.NEUTRAL;
 
