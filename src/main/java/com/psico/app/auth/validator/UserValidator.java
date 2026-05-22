@@ -35,6 +35,10 @@ public class UserValidator {
         if (password.length() < 6) {
             throw new IllegalArgumentException("Password must have at least 6 characters");
         }
+
+        if (password.length() > 20) {
+            throw new IllegalArgumentException("Password cannot exceed 20 characters");
+        }
     }
 
     private void validateName(String name) {
