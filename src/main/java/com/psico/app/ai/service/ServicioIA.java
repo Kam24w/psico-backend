@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServicioIA {
 
-    private final ClienteIA clienteIA;
+    private final com.psico.app.ai.client.AIProviderFactory aiProviderFactory;
     private final GeneradorRespuesta generadorRespuesta;
     private final AlertaSeguridadRepository alertaRepository;
     private final PersonalidadIARepository personalidadRepository;
@@ -53,7 +53,7 @@ public class ServicioIA {
         log.info("USER MESSAGE:\n{}", finalUserMessage);
 
         // Pasar el nivel de riesgo: 0 → 8B rápido, >0 → 70B empático
-        String rawResponse = clienteIA.enviarMensajeConRiesgo(systemPrompt, finalUserMessage, nivelRiesgo);
+        String rawResponse = aiProviderFactory.getProvider().enviarMensajeConRiesgo(systemPrompt, finalUserMessage, nivelRiesgo);
 
         log.info("RAW RESPONSE FROM AI:\n\"{}\"", rawResponse);
 
@@ -138,7 +138,7 @@ public class ServicioIA {
         String userMessage  = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
 
         // El saludo inicial siempre usa el modelo rápido (nivelRiesgo = 0)
-        String rawResponse = clienteIA.enviarMensaje(systemPrompt, userMessage);
+        String rawResponse = aiProviderFactory.getProvider().enviarMensaje(systemPrompt, userMessage);
         log.info("RAW GREETING FROM AI:\n\"{}\"", rawResponse);
 
         return AiResponse.builder()

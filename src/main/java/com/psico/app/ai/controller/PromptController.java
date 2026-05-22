@@ -19,7 +19,7 @@ public class PromptController {
             @PathVariable Long usuarioId,
             @RequestBody PromptRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Prompt generado", pipelineFacade.ejecutarPipeline(usuarioId, request.mensaje(), request.emocion())));
+        return ResponseEntity.ok(ApiResponse.success("Prompt generado", pipelineFacade.ejecutarPipeline(usuarioId, request.mensaje(), request.emocion()).getContenido()));
     }
 
     public record PromptRequest(String mensaje, TipoEmocion emocion) {}
