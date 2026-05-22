@@ -21,6 +21,7 @@ import com.psico.app.conversation.model.Conversation;
 import com.psico.app.conversation.model.Message;
 import com.psico.app.conversation.service.ConversationService;
 
+import com.psico.app.ai.facade.EmotionPipelineFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -30,10 +31,11 @@ import lombok.RequiredArgsConstructor;
 public class ConversationController {
 
     private final ConversationService conversationService;
+    private final EmotionPipelineFacade pipelineFacade;
 
     @PostMapping({"/message", "/mensaje"})
     public ResponseEntity<ApiResponse<MensajeResponse>> sendMessage(@Valid @RequestBody MensajeRequest request) {
-        Message response = conversationService.processMessage(
+        Message response = pipelineFacade.ejecutarPipeline(
                 Objects.requireNonNull(request.getUsuarioId()),
                 request.getContenido(),
                 request.getEmocion()
