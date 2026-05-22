@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psico.app.ai.client.ClienteIA;
+import com.psico.app.ai.dto.AiResponse;
 import com.psico.app.ai.model.AlertaSeguridad;
 import com.psico.app.ai.repository.AlertaSeguridadRepository;
 import com.psico.app.ai.repository.MemoriaContextoRepository;
@@ -17,170 +18,103 @@ import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * ServicioIA
- * Orquesta la generación de respuestas combinando:
- * 1. El mensaje del usuario
- * 2. La emoción detectada (vía Strategy + Factory)
- * 3. La petición a la API de Google Gemini/Gemma 4 (vía ClienteIA)
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ServicioIA {
 
-    private final ClienteIA clienteIA;
+    private final com.psico.app.ai.client.AIProviderFactory aiProviderFactory;
     private final GeneradorRespuesta generadorRespuesta;
     private final AlertaSeguridadRepository alertaRepository;
     private final PersonalidadIARepository personalidadRepository;
     private final MemoriaContextoRepository memoriaRepository;
     private final EntityManager entityManager;
 
-    public String generateResponse(Long userId, String userMessage, TipoEmocion emotion) {
-        log.info("Generating response for user {} with emotion {}", userId, emotion);
+    public AiResponse generateResponse(Long userId, String userMessage, TipoEmocion emotion) {
+        log.info("--- START AI GENERATION ---");
+        log.info("User ID: {}, Message: {}, Emotion: {}", userId, userMessage, emotion);
 
-        detectRisks(userId, userMessage);
+        // Detectar riesgo primero — el nivel determina qué modelo se usará
+        int nivelRiesgo = detectRisks(userId, userMessage);
+        if (nivelRiesgo > 0) {
+            log.warn("Nivel de riesgo {} detectado — escalando a modelo 70B", nivelRiesgo);
+        }
 
-        // 2. Obtener Personalidad Activa
         String personalidadPrompt = personalidadRepository.findByActivaTrue()
                 .map(p -> p.getSystemPrompt())
-                .orElse("Eres un asistente psicológico virtual altamente empático.");
+                .orElse("Eres un asistente emocional empático.");
 
-        // 3. Obtener Memoria Reciente
-        String memoryContext = memoriaRepository.findByUsuarioId(userId).stream()
-                .limit(5)
-                .map(m -> m.getClave() + ": " + m.getValor())
-                .reduce("", (a, b) -> a + "\n" + b);
+        String memoryContext = getRecentMemory(userId);
 
-        String systemPrompt = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
+        String systemPrompt   = generadorRespuesta.buildSystemPrompt(emotion, personalidadPrompt);
         String finalUserMessage = generadorRespuesta.buildUserMessage(userMessage, emotion, memoryContext);
 
-        String rawResponse = clienteIA.enviarMensaje(systemPrompt, finalUserMessage);
-        return cleanResponse(rawResponse);
+        log.info("SYSTEM PROMPT:\n{}", systemPrompt);
+        log.info("USER MESSAGE:\n{}", finalUserMessage);
+
+        // Pasar el nivel de riesgo: 0 → 8B rápido, >0 → 70B empático
+        String rawResponse = aiProviderFactory.getProvider().enviarMensajeConRiesgo(systemPrompt, finalUserMessage, nivelRiesgo);
+
+        log.info("RAW RESPONSE FROM AI:\n\"{}\"", rawResponse);
+
+        String cleaned = cleanResponse(rawResponse);
+
+        log.info("FINAL CLEANED RESPONSE:\n\"{}\"", cleaned);
+        log.info("--- END AI GENERATION ---");
+
+        return AiResponse.builder()
+                .raw(rawResponse)
+                .cleaned(cleaned)
+                .build();
     }
 
     private String cleanResponse(String texto) {
-        if (texto == null || texto.isBlank()) return "Lo siento, no pude procesar tu mensaje.";
+        if (texto == null || texto.isBlank()) return "Hola, estoy aquí para escucharte.";
 
-        String resultado = texto.trim();
+        log.info("=== AI RAW (passthrough) ===\n\"{}\"", texto);
 
-        // ── ESTRATEGIA 0 ─────────────────────────────────────────────────────────
-        // Gemma a veces devuelve todo su razonamiento interno visible:
-        // "* User Emotional State: ... * Goal: ... * Draft 1: ... * Draft 2: ..."
-        // Detectamos si hay borradores (Draft) y extraemos el último.
-        java.util.regex.Pattern pDraft = java.util.regex.Pattern.compile(
-            "\\*\\s*Draft\\s*\\d+[:\\*]\\s*([^*]+?)(?=\\s*\\*\\s*(?:Draft|Spanish|$))",
-            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.DOTALL
-        );
-        java.util.regex.Matcher mDraft = pDraft.matcher(resultado);
-        String ultimoDraft = null;
-        while (mDraft.find()) {
-            String candidato = mDraft.group(1).trim();
-            if (candidato.length() > 10) ultimoDraft = candidato;
-        }
-        if (ultimoDraft != null) {
-            return ultimoDraft.replaceAll("^[\"*]+|[\"*]+$", "").trim();
+        String resultado = texto.trim()
+            .replaceAll("^\"|\"$", "")
+            .replaceAll("\\*\\*", "")
+            .trim();
+
+        if (resultado.length() < 3) {
+            return "Cuéntame más, estoy escuchando.";
         }
 
-        // Auto-evaluación tipo checklist: "* Spanish? Yes. * Max 3..."
-        String primeraLinea = resultado.split("\n")[0].toLowerCase();
-        boolean esChecklist = primeraLinea.matches(".*\\b(spanish|sentences|empathetic|direct|quotes|asterisks|user emotional|goal:|constraints).*");
-        if (esChecklist) {
-            return "Hola, estoy aquí para escucharte. ¿Cómo te sientes en este momento?";
-        }
-
-
-        // Gemma a veces razona en inglés y luego pone la respuesta entre comillas:
-        // "Let's go with X. \"Respuesta.\" \"Respuesta duplicada.\""
-        // Tomamos la ÚLTIMA cadena entre comillas dobles del texto — es la versión final.
-        java.util.regex.Pattern pComillas = java.util.regex.Pattern.compile("\"([^\"]{10,})\"");
-        java.util.regex.Matcher mComillas = pComillas.matcher(resultado);
-        String ultimaComilla = null;
-        while (mComillas.find()) {
-            ultimaComilla = mComillas.group(1).trim();
-        }
-        if (ultimaComilla != null && !ultimaComilla.isBlank()) {
-            return ultimaComilla;
-        }
-
-        // ── ESTRATEGIA 2 ─────────────────────────────────────────────────────────
-        // Marcadores explícitos de respuesta final
-        String lower = resultado.toLowerCase();
-        String[] marcadores = {
-            "selected response:", "respuesta final:", "respuesta:",
-            "final response:", "my response:", "here is my response:"
-        };
-        for (String marcador : marcadores) {
-            int idx = lower.lastIndexOf(marcador);
-            if (idx >= 0) {
-                String tras = resultado.substring(idx + marcador.length()).trim();
-                tras = tras.replaceAll("^\"|\"$", "").trim();
-                if (!tras.isBlank()) return tras;
-            }
-        }
-
-        // ── ESTRATEGIA 3 ─────────────────────────────────────────────────────────
-        // Filtrar línea a línea: descartar razonamiento en inglés y meta-comentarios
-        String[] lineas = resultado.split("\n");
-        StringBuilder sb = new StringBuilder();
-
-        for (String linea : lineas) {
-            String t = linea.trim();
-            if (t.isEmpty()) continue;
-
-            // Descartar razonamiento meta en inglés
-            if (t.toLowerCase().matches("^(let'?s|okay|ok,|i('ll| will| need| should| want)|here'?s|now,|so,|alright|first,|the user|this is|i think|we need|my response|note:|step \\d|option \\d).*")) continue;
-            // Descartar listas y bullets
-            if (t.startsWith("* ") || t.startsWith("- ") || t.startsWith("**")) continue;
-            if (t.matches("^\\d+\\.\\s.*")) continue;
-            // Descartar etiquetas entre corchetes
-            if (t.matches("^\\[.*\\]$")) continue;
-            // Descartar líneas de instrucción/contexto en español
-            if (t.toLowerCase().matches("^(goal:|constraints:|el usuario dijo|instrucción \\d|contexto:|tono:|brevedad:).*")) continue;
-
-            sb.append(t).append(" ");
-        }
-
-        resultado = sb.toString().trim();
-        // Quitar comillas y asteriscos sobrantes de los extremos
-        resultado = resultado.replaceAll("^[\"*]+|[\"*]+$", "").trim();
-
-        if (resultado.isEmpty()) return "Hola, estoy aquí para escucharte.";
         return resultado;
     }
 
+    /**
+     * Detecta palabras clave de riesgo y guarda la alerta.
+     * Ahora retorna el nivelRiesgo para que generateResponse pueda
+     * elegir el modelo de IA apropiado.
+     */
     @Transactional
-    public void detectRisks(Long userId, String message) {
+    public int detectRisks(Long userId, String message) {
+        if (message == null) return 0;
         String lower = message.toLowerCase();
 
         int nivelRiesgo = 0;
         String tipo = null;
 
-        // Nivel 10 — riesgo crítico: intención suicida directa
         if (lower.contains("suicidio") || lower.contains("quitarme la vida")
                 || lower.contains("matarme") || lower.contains("no quiero vivir")
                 || lower.contains("quiero morir") || lower.contains("acabar con mi vida")) {
             nivelRiesgo = 10;
             tipo = "SUICIDIO";
-        }
-        // Nivel 7 — autolesión
-        else if (lower.contains("autolesion") || lower.contains("cortarme")
+        } else if (lower.contains("autolesion") || lower.contains("cortarme")
                 || lower.contains("hacerme daño") || lower.contains("lastimarme")) {
             nivelRiesgo = 7;
             tipo = "AUTOLESION";
-        }
-        // Nivel 5 — desesperanza profunda
-        else if (lower.contains("morir") || lower.contains("ya no puedo más")
+        } else if (lower.contains("morir") || lower.contains("ya no puedo más")
                 || lower.contains("no vale la pena vivir")) {
             nivelRiesgo = 5;
             tipo = "DESESPERANZA";
         }
 
         if (tipo != null) {
-            // Referencia segura a entidad existente (sin cargar todos sus campos)
             User usuarioRef = entityManager.getReference(User.class, userId);
-
-            // Truncar fragmento a 500 chars para evitar problemas de columna
             String fragmento = message.length() > 500 ? message.substring(0, 500) : message;
 
             AlertaSeguridad alerta = AlertaSeguridad.builder()
@@ -189,9 +123,34 @@ public class ServicioIA {
                     .nivelRiesgo(nivelRiesgo)
                     .fragmentoDetectado(fragmento)
                     .build();
-            alertaRepository.save(Objects.requireNonNull(alerta));
-
+            alertaRepository.save(alerta);
             log.warn("Security alert [{}] level {} detected for user {}", tipo, nivelRiesgo, userId);
         }
+
+        return nivelRiesgo;
+    }
+
+    public AiResponse generateInitialGreeting(Long userId, String userName, TipoEmocion emotion) {
+        log.info("Generating initial greeting for user {} ({}) with emotion {}", userId, userName, emotion);
+
+        String memoryContext = getRecentMemory(userId);
+        String systemPrompt = "Eres un asistente psicológico empático iniciando una sesión de voz.";
+        String userMessage  = generadorRespuesta.buildInitialGreetingPrompt(userName, emotion, memoryContext);
+
+        // El saludo inicial siempre usa el modelo rápido (nivelRiesgo = 0)
+        String rawResponse = aiProviderFactory.getProvider().enviarMensaje(systemPrompt, userMessage);
+        log.info("RAW GREETING FROM AI:\n\"{}\"", rawResponse);
+
+        return AiResponse.builder()
+                .raw(rawResponse)
+                .cleaned(cleanResponse(rawResponse))
+                .build();
+    }
+
+    private String getRecentMemory(Long userId) {
+        return memoriaRepository.findByUsuarioId(userId).stream()
+                .limit(5)
+                .map(m -> m.getClave() + ": " + m.getValor())
+                .reduce("", (a, b) -> a + "\n" + b);
     }
 }

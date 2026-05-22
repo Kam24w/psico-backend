@@ -20,6 +20,9 @@ public class Message {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String contenido;
 
+    @Column(name = "raw_contenido", columnDefinition = "TEXT")
+    private String rawContenido;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "remitente")
     private Remitente remitente; // USER o AI
