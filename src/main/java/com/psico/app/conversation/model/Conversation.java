@@ -39,6 +39,10 @@ public class Conversation {
     @Builder.Default
     private Boolean activa = true;
 
+    @Column(name = "tipo")
+    @Builder.Default
+    private String tipo = "TEXTO"; // TEXTO o VIDEO
+
     public void agregarMensaje(Message message) {
         this.mensajes.add(message);
         this.updatedAt = LocalDateTime.now();

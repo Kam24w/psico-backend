@@ -33,9 +33,13 @@ public class ConversationService {
     private final UserService userService;
 
     public Message processMessage(@NonNull Long userId, String content, TipoEmocion detectedEmotion) {
+        return processMessage(userId, content, detectedEmotion, "TEXTO");
+    }
+
+    public Message processMessage(@NonNull Long userId, String content, TipoEmocion detectedEmotion, String tipo) {
         User user = userService.getById(userId);
 
-        Conversation conversation = obtainAndStoreUserMessage(user, content, detectedEmotion);
+        Conversation conversation = obtainAndStoreUserMessage(user, content, detectedEmotion, tipo);
 
         TipoEmocion emotion = detectedEmotion != null
                 ? detectedEmotion
@@ -47,10 +51,40 @@ public class ConversationService {
     }
 
     @Transactional
-    protected Conversation obtainAndStoreUserMessage(User user, String content, TipoEmocion detectedEmotion) {
+    public List<Message> syncMessages(@NonNull Long userId, String userContent, String aiContent, TipoEmocion emotion, String tipo) {
+        User user = userService.getById(userId);
         Conversation conversation = conversationRepository
-                .findFirstByUsuarioIdAndActivaTrue(user.getId())
-                .orElseGet(() -> createNewConversation(user));
+                .findFirstByUsuarioIdAndActivaTrueAndTipo(user.getId(), tipo)
+                .orElseGet(() -> createNewConversation(user, tipo));
+
+        Message userMessage = Objects.requireNonNull(Message.builder()
+                .contenido(userContent)
+                .remitente(Message.Remitente.USER)
+                .emocionAsociada(toTipoEmocion(emotion))
+                .conversation(conversation)
+                .build());
+        messageRepository.save(userMessage);
+
+        Message aiMessage = Objects.requireNonNull(Message.builder()
+                .contenido(aiContent)
+                .rawContenido(aiContent)
+                .remitente(Message.Remitente.AI)
+                .emocionAsociada(toTipoEmocion(emotion))
+                .conversation(conversation)
+                .build());
+        messageRepository.save(aiMessage);
+
+        conversation.setUpdatedAt(java.time.LocalDateTime.now());
+        conversationRepository.save(conversation);
+        
+        return List.of(userMessage, aiMessage);
+    }
+
+    @Transactional
+    protected Conversation obtainAndStoreUserMessage(User user, String content, TipoEmocion detectedEmotion, String tipo) {
+        Conversation conversation = conversationRepository
+                .findFirstByUsuarioIdAndActivaTrueAndTipo(user.getId(), tipo)
+                .orElseGet(() -> createNewConversation(user, tipo));
 
         Message userMessage = Objects.requireNonNull(Message.builder()
                 .contenido(content)
@@ -80,8 +114,8 @@ public class ConversationService {
         return messageRepository.findByConversationIdOrderByFechaAsc(conversationId);
     }
 
-    public List<Message> getActiveUserHistory(@NonNull Long userId) {
-        return conversationRepository.findFirstByUsuarioIdAndActivaTrue(userId)
+    public List<Message> getActiveUserHistory(@NonNull Long userId, String tipo) {
+        return conversationRepository.findFirstByUsuarioIdAndActivaTrueAndTipo(userId, tipo)
                 .map(conversation -> messageRepository.findByConversationIdOrderByFechaAsc(conversation.getId()))
                 .orElse(List.of());
     }
@@ -94,9 +128,10 @@ public class ConversationService {
         return emotionType;
     }
 
-    private Conversation createNewConversation(User user) {
+    private Conversation createNewConversation(User user, String tipo) {
         Conversation newConversation = Objects.requireNonNull(Conversation.builder()
                 .usuario(user)
+                .tipo(tipo)
                 .build());
         return Objects.requireNonNull(conversationRepository.save(newConversation));
     }
@@ -108,7 +143,7 @@ public class ConversationService {
 
     @Deprecated(forRemoval = false)
     protected Conversation obtenerYGuardarMensajeUsuario(User usuario, String contenido, TipoEmocion emocionActual) {
-        return obtainAndStoreUserMessage(usuario, contenido, emocionActual);
+        return obtainAndStoreUserMessage(usuario, contenido, emocionActual, "TEXTO");
     }
 
     @Deprecated(forRemoval = false)
@@ -123,7 +158,7 @@ public class ConversationService {
 
     @Deprecated(forRemoval = false)
     public List<Message> obtenerHistorialActivoUsuario(@NonNull Long usuarioId) {
-        return getActiveUserHistory(usuarioId);
+        return getActiveUserHistory(usuarioId, "TEXTO");
     }
 
     @Deprecated(forRemoval = false)
@@ -133,10 +168,15 @@ public class ConversationService {
 
     @Transactional
     public Message initiateConversation(@NonNull Long userId, TipoEmocion emotion) {
+        return initiateConversation(userId, emotion, "TEXTO");
+    }
+
+    @Transactional
+    public Message initiateConversation(@NonNull Long userId, TipoEmocion emotion, String tipo) {
         User user = userService.getById(userId);
         Conversation conversation = conversationRepository
-                .findFirstByUsuarioIdAndActivaTrue(user.getId())
-                .orElseGet(() -> createNewConversation(user));
+                .findFirstByUsuarioIdAndActivaTrueAndTipo(user.getId(), tipo)
+                .orElseGet(() -> createNewConversation(user, tipo));
 
         AiResponse aiGreeting = servicioIA.generateInitialGreeting(userId, user.getNombre(), emotion);
 
@@ -144,5 +184,18 @@ public class ConversationService {
     }
     public User getUserByEmail(String email) {
         return userService.getByEmail(email);
+    }
+
+    @Transactional
+    public void closeActiveSession(Long userId, String tipo) {
+        conversationRepository.findFirstByUsuarioIdAndActivaTrueAndTipo(userId, tipo).ifPresent(conv -> {
+            conv.setActiva(false);
+            conversationRepository.save(conv);
+        });
+    }
+
+    @Transactional
+    public void deleteSession(Long conversationId) {
+        conversationRepository.deleteById(conversationId);
     }
 }
