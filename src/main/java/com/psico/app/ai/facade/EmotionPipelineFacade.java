@@ -28,22 +28,25 @@ public class EmotionPipelineFacade {
     private final com.psico.app.user.service.UserService userService;
 
     public Message ejecutarPipeline(Long usuarioId, String mensajeUsuario, TipoEmocion emocionDetectada) {
+        return ejecutarPipeline(usuarioId, mensajeUsuario, emocionDetectada, "TEXTO");
+    }
+
+    public Message ejecutarPipeline(Long usuarioId, String mensajeUsuario, TipoEmocion emocionDetectada, String tipoSesion) {
         TipoEmocion emocionBase = emocionDetectada != null ? emocionDetectada : TipoEmocion.NEUTRAL;
-        log.info("Pipeline emocional para usuario {} con emoción {}", usuarioId, emocionBase);
+        log.info("Pipeline emocional para usuario {} con emoción {} (sesión: {})", usuarioId, emocionBase, tipoSesion);
 
-        // 1. Guardar mensaje del usuario y obtener conversación activa
+        // 1. Guardar mensaje del usuario y obtener conversación activa (filtrada por tipo)
         com.psico.app.auth.model.User user = userService.getById(usuarioId);
-        Conversation conversation = conversationService.obtainAndStoreUserMessage(user, mensajeUsuario, emocionBase);
+        Conversation conversation = conversationService.obtainAndStoreUserMessage(user, mensajeUsuario, emocionBase, tipoSesion);
 
-        // 2. Evaluar Riesgo (ServicioIA lo hace ahora en su generateResponse internamente)
-        // Guardamos memoria y analizamos conversación
+        // 2. Guardar memoria y analizar conversación
         memoryService.guardarMemoria(usuarioId, mensajeUsuario, emocionBase);
-        analysisService.analizarConversacion(usuarioId, conversationService.getActiveUserHistory(usuarioId));
+        analysisService.analizarConversacion(usuarioId, conversationService.getActiveUserHistory(usuarioId, tipoSesion));
 
         // 3. Solicitar respuesta a la IA
         AiResponse aiResponse = servicioIA.generateResponse(usuarioId, mensajeUsuario, emocionBase);
 
-        // 4. Obtener recomendaciones adicionales si son necesarias
+        // 4. Obtener recomendaciones adicionales
         recommendationService.obtenerRecomendaciones(emocionBase);
 
         // 5. Guardar la respuesta de la IA y retornar
