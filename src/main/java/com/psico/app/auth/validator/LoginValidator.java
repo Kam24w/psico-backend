@@ -13,6 +13,10 @@ public class LoginValidator {
             throw new ValidationException("VALIDATION_ERROR", "Email is required");
         }
 
+        if (request.getEmail().length() > 30) {
+            throw new ValidationException("VALIDATION_ERROR", "Email cannot exceed 30 characters");
+        }
+
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new ValidationException("VALIDATION_ERROR", "Password is required");
         }
