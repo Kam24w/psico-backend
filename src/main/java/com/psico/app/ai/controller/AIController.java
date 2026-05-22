@@ -19,7 +19,7 @@ public class AIController {
             @PathVariable Long usuarioId,
             @RequestBody AIRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Respuesta generada", pipelineFacade.ejecutarPipeline(usuarioId, request.mensaje(), request.emocion())));
+        return ResponseEntity.ok(ApiResponse.success("Respuesta generada", pipelineFacade.ejecutarPipeline(usuarioId, request.mensaje(), request.emocion()).getContenido()));
     }
 
     public record AIRequest(String mensaje, TipoEmocion emocion) {}

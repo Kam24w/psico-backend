@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.psico.app.ai.facade.EmotionPipelineFacade;
 import com.psico.app.common.response.ApiResponse;
 import com.psico.app.conversation.dto.ConversacionResponse;
 import com.psico.app.conversation.dto.MensajeRequest;
@@ -31,11 +32,16 @@ import lombok.RequiredArgsConstructor;
 public class ConversationController {
 
     private final ConversationService conversationService;
+    private final EmotionPipelineFacade pipelineFacade;
 
+    /**
+     * Envía un mensaje de texto. Usa el pipeline de IA (EmotionPipelineFacade)
+     * y aísla la conversación según tipoSesion (TEXTO o VIDEO).
+     */
     @PostMapping({"/message", "/mensaje"})
     public ResponseEntity<ApiResponse<MensajeResponse>> sendMessage(@Valid @RequestBody MensajeRequest request) {
         String tipoSesion = request.getTipoSesion() != null ? request.getTipoSesion() : "TEXTO";
-        Message response = conversationService.processMessage(
+        Message response = pipelineFacade.ejecutarPipeline(
                 Objects.requireNonNull(request.getUsuarioId()),
                 request.getContenido(),
                 request.getEmocion(),
@@ -70,10 +76,8 @@ public class ConversationController {
     public ResponseEntity<ApiResponse<List<MensajeResponse>>> getActiveHistory(
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "TEXTO") String tipoSesion,
             java.security.Principal principal) {
-        // Obtenemos el usuario por email (JWT)
         com.psico.app.auth.model.User user = conversationService.getUserByEmail(principal.getName());
         List<Message> history = conversationService.getActiveUserHistory(user.getId(), tipoSesion);
-        
         return ResponseEntity.ok(ApiResponse.success("Active session history retrieved", history.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList())));
