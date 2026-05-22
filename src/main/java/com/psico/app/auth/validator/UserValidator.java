@@ -22,6 +22,10 @@ public class UserValidator {
             throw new IllegalArgumentException("Email is required");
         }
 
+        if (email.length() > 30) {
+            throw new IllegalArgumentException("Email cannot exceed 30 characters");
+        }
+
         if (!Pattern.matches(EMAIL_REGEX, email)) {
             throw new IllegalArgumentException("Invalid email format");
         }
@@ -40,6 +44,10 @@ public class UserValidator {
     private void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Name is required");
+        }
+
+        if (name.length() > 20) {
+            throw new IllegalArgumentException("Name cannot exceed 20 characters");
         }
     }
 }
