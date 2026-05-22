@@ -13,35 +13,28 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MensajeRequest {
+public class SyncMessagesRequest {
     @NotNull
     @JsonAlias("usuarioId")
     private Long userId;
 
     @NotBlank
     @Size(max = 2000)
-    @JsonAlias("contenido")
-    private String content;
+    @JsonAlias("userContent")
+    private String userContent;
+
+    @NotBlank
+    @Size(max = 4000)
+    @JsonAlias("aiContent")
+    private String aiContent;
 
     @JsonAlias("emocion")
     private TipoEmocion emotion;
-
+    
     @JsonAlias("tipoSesion")
     private String tipoSesion = "TEXTO";
 
     public Long getUsuarioId() {
         return userId;
-    }
-
-    public String getContenido() {
-        return content;
-    }
-
-    public TipoEmocion getEmocion() {
-        return emotion;
-    }
-
-    public String getTipoSesion() {
-        return tipoSesion != null ? tipoSesion : "TEXTO";
     }
 }

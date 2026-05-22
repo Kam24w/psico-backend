@@ -18,6 +18,7 @@ public class ConversacionResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean active;
+    private String tipo;
 
     @Deprecated(forRemoval = false)
     public Long getUsuarioId() {

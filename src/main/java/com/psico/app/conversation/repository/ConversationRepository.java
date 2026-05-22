@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
     List<Conversation> findByUsuarioIdOrderByUpdatedAtDesc(Long usuarioId);
     Optional<Conversation> findFirstByUsuarioIdAndActivaTrue(Long usuarioId);
+    Optional<Conversation> findFirstByUsuarioIdAndActivaTrueAndTipo(Long usuarioId, String tipo);
 }
