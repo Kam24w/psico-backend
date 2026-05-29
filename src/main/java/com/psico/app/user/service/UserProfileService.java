@@ -49,6 +49,7 @@ public class UserProfileService {
             // No existe perfil: crear uno nuevo
             UserProfileEntity newProfile = new UserProfileEntity();
             newProfile.setUser(user);
+            newProfile.setUsuarioId(user.getId());
             newProfile.setPreferences(preferences);
             newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
             userProfileRepository.save(newProfile);
@@ -66,6 +67,7 @@ public class UserProfileService {
         if (updated == 0) {
             UserProfileEntity newProfile = new UserProfileEntity();
             newProfile.setUser(user);
+            newProfile.setUsuarioId(user.getId());
             newProfile.setPreferences("[]");
             newProfile.setAvatarUrl(avatarUrl);
             newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);

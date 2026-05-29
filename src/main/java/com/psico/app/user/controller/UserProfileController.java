@@ -58,6 +58,7 @@ public class UserProfileController {
 
     public static class AvatarRequest {
         @NotBlank
+        @com.fasterxml.jackson.annotation.JsonProperty("avatarUrl")
         private String avatarUrl;
 
         public String getAvatarUrl() {

@@ -34,6 +34,9 @@ public class UserProfileEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "usuario_id")
+    private Long usuarioId;
+
     @Builder.Default
     @Column(name = "estado_emocional_actual")
     private EmotionType currentEmotionalState = EmotionType.NEUTRAL;
