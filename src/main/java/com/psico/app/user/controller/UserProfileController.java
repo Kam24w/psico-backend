@@ -32,8 +32,19 @@ public class UserProfileController {
             @PathVariable Long userId,
             @Valid @RequestBody PreferencesRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Preferences updated", profileService.updatePreferences(userId, request.preferences())));
+        return ResponseEntity.ok(ApiResponse.success("Preferences updated", profileService.updatePreferences(userId, request.getPreferences())));
     }
 
-    public static record PreferencesRequest(@com.fasterxml.jackson.annotation.JsonProperty("preferences") @NotBlank String preferences) {}
+    public static class PreferencesRequest {
+        @NotBlank
+        private String preferences;
+
+        public String getPreferences() {
+            return preferences;
+        }
+
+        public void setPreferences(String preferences) {
+            this.preferences = preferences;
+        }
+    }
 }
