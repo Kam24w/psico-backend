@@ -17,39 +17,39 @@ public class UserProfileService {
     public UserProfile getProfile(Long userId) {
         User user = userService.getById(userId);
         UserProfileEntity profile = userProfileRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserProfileEntity userProfile = new UserProfileEntity();
-                    userProfile.setUser(user);
-                    userProfile.setPreferences("[]");
-                    userProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
-                    return userProfile;
-                });
+                .orElse(null);
 
-        String emotionalState = profile.getCurrentEmotionalState() != null
+        String emotionalState = (profile != null && profile.getCurrentEmotionalState() != null)
                 ? profile.getCurrentEmotionalState().name()
                 : "NEUTRAL";
+
+        String preferences = (profile != null && profile.getPreferences() != null)
+                ? profile.getPreferences()
+                : "[]";
 
         return UserProfile.builder()
                 .userId(user.getId())
                 .fullName(user.getName())
                 .email(user.getEmail())
                 .currentEmotionalState(emotionalState)
-                .preferences(profile.getPreferences())
+                .preferences(preferences)
                 .build();
     }
 
     @Transactional
     public UserProfile updatePreferences(Long userId, String preferences) {
         User user = userService.getById(userId);
-        UserProfileEntity profile = userProfileRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserProfileEntity p = new UserProfileEntity();
-                    p.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
-                    return p;
-                });
-        profile.setPreferences(preferences);
-        profile.setUser(user);
-        userProfileRepository.save(profile);
+
+        int updated = userProfileRepository.updatePreferencesByUserId(userId, preferences);
+
+        if (updated == 0) {
+            // No existe perfil: crear uno nuevo
+            UserProfileEntity newProfile = new UserProfileEntity();
+            newProfile.setUser(user);
+            newProfile.setPreferences(preferences);
+            newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
+            userProfileRepository.save(newProfile);
+        }
 
         return getProfile(userId);
     }
