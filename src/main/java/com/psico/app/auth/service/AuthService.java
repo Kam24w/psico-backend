@@ -34,25 +34,62 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserValidator userValidator;
     private final LoginValidator loginValidator;
+    private final RateLimiterService rateLimiterService;
+    private final jakarta.servlet.http.HttpServletRequest httpServletRequest;
+
+    private String decodeBase64(String encoded) {
+        if (encoded == null) {
+            return null;
+        }
+        try {
+            return new String(java.util.Base64.getDecoder().decode(encoded), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            log.warn("Password was not a valid Base64 string. Processing as plain text.");
+            return encoded;
+        }
+    }
+
+    private String getClientIp() {
+        String xfHeader = httpServletRequest.getHeader("X-Forwarded-For");
+        if (xfHeader == null || xfHeader.isBlank()) {
+            return httpServletRequest.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0].trim();
+    }
 
     // ===================== LOGIN =====================
     public AuthResponse login(LoginRequest request) {
 
-        log.info("Login attempt for email: {}", request.getEmail());
+        String ip = getClientIp();
+        log.info("Login attempt for email: {} from IP: {}", request.getEmail(), ip);
 
-        // 1. Validar datos
+        // 1. Verificar Rate Limiting
+        if (rateLimiterService.isBlocked(ip)) {
+            log.warn("Blocked login attempt due to rate limiting for IP: {}", ip);
+            throw new ValidationException(
+                    "TOO_MANY_REQUESTS",
+                    "Demasiados intentos fallidos. Tu IP está temporalmente bloqueada por 15 minutos."
+            );
+        }
+
+        // 2. Decodificar contraseña
+        String decodedPassword = decodeBase64(request.getPassword());
+        request.setPassword(decodedPassword);
+
+        // 3. Validar datos
         loginValidator.validate(request);
 
         try {
-            // 2. Autenticar con Spring Security
+            // 4. Autenticar con Spring Security
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword()
                     )
             );
-        } catch (BadCredentialsException | InternalAuthenticationServiceException e) {
-            log.error("Authentication failed for email: {}", request.getEmail());
+        } catch (BadCredentialsException | org.springframework.security.authentication.InternalAuthenticationServiceException e) {
+            log.error("Authentication failed for email: {} from IP: {}", request.getEmail(), ip);
+            rateLimiterService.registerFailure(ip);
 
             throw new ValidationException(
                     "INVALID_CREDENTIALS",
@@ -60,19 +97,22 @@ public class AuthService {
             );
         }
 
-        // 3. Buscar usuario
+        // 5. Buscar usuario
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException(
                         "USER_NOT_FOUND",
                         "User not found"
                 ));
 
-        // 4. Generar token
+        // 6. Limpiar intentos fallidos al tener éxito
+        rateLimiterService.registerSuccess(ip);
+
+        // 7. Generar token
         String token = generateToken(user);
 
         log.info("Login successful for user: {}", user.getEmail());
 
-        // 5. Respuesta
+        // 8. Respuesta
         return AuthResponse.builder()
                 .token(token)
                 .userId(user.getId())
@@ -87,10 +127,14 @@ public class AuthService {
 
         log.info("Register attempt for email: {}", request.getEmail());
 
-        // 1. Validar datos
+        // 1. Decodificar contraseña
+        String decodedPassword = decodeBase64(request.getPassword());
+        request.setPassword(decodedPassword);
+
+        // 2. Validar datos
         userValidator.validarRegistro(request);
 
-        // 2. Verificar email duplicado
+        // 3. Verificar email duplicado
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(
                     "EMAIL_ALREADY_EXISTS",
