@@ -2,6 +2,7 @@ package com.psico.app.auth.service;
 
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -9,6 +10,17 @@ public class RateLimiterService {
 
     private static final int MAX_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
+
+    /**
+     * IPs that are never subject to rate limiting (e.g. the app owner / admin testing locally).
+     * Add any additional trusted IPs here.
+     */
+    private static final Set<String> WHITELISTED_IPS = Set.of(
+        "127.0.0.1",
+        "::1",
+        "0:0:0:0:0:0:0:1",
+        "localhost"
+    );
 
     private final ConcurrentHashMap<String, Attempt> attemptsMap = new ConcurrentHashMap<>();
 
@@ -22,7 +34,15 @@ public class RateLimiterService {
         }
     }
 
+    /**
+     * Returns true if the IP is currently blocked.
+     * Whitelisted IPs are never blocked.
+     */
     public boolean isBlocked(String ip) {
+        if (WHITELISTED_IPS.contains(ip)) {
+            return false;
+        }
+
         Attempt attempt = attemptsMap.get(ip);
         if (attempt == null) {
             return false;
@@ -40,7 +60,15 @@ public class RateLimiterService {
         return false;
     }
 
+    /**
+     * Registers a failed login attempt.
+     * Whitelisted IPs are ignored.
+     */
     public void registerFailure(String ip) {
+        if (WHITELISTED_IPS.contains(ip)) {
+            return;
+        }
+
         attemptsMap.compute(ip, (key, val) -> {
             if (val == null) {
                 return new Attempt(1, null);
@@ -57,7 +85,18 @@ public class RateLimiterService {
         });
     }
 
+    /**
+     * Clears all failed attempts for the given IP (called on successful login).
+     */
     public void registerSuccess(String ip) {
+        attemptsMap.remove(ip);
+    }
+
+    /**
+     * Manually clears any active block for the given IP.
+     * Useful for admin/owner to unblock themselves without waiting.
+     */
+    public void clearBlock(String ip) {
         attemptsMap.remove(ip);
     }
 }
