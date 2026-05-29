@@ -15,20 +15,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SyncMessagesRequest {
     @NotNull
-    @JsonAlias("usuarioId")
+    @JsonAlias({"usuarioId", "userId"})
     private Long userId;
 
     @NotBlank
     @Size(max = 2000)
-    @JsonAlias("userContent")
+    @JsonAlias({"userContent", "contenidoUsuario"})
     private String userContent;
 
     @NotBlank
     @Size(max = 4000)
-    @JsonAlias("aiContent")
+    @JsonAlias({"aiContent", "contenidoAi"})
     private String aiContent;
 
-    @JsonAlias("emocion")
+    @JsonAlias({"emocion", "emotion"})
     private EmotionType emotion;
     
     @JsonAlias({"tipoSesion", "sessionType"})

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping({"/api/intervention", "/api/intervencion"})
+@RequestMapping("/api/intervention")
 @RequiredArgsConstructor
 public class InterventionController {
 

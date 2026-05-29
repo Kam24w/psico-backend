@@ -44,7 +44,7 @@ public class InitiateController {
 
         log.info("Initiating voice conversation for user: {} with emotion: {}", email, emotion);
 
-        String type = body.getOrDefault("tipo", "VIDEO");
+        String type = body.containsKey("type") ? body.get("type") : body.getOrDefault("tipo", "VIDEO");
         Message greeting = conversationService.initiateConversation(user.getId(), emotion, type);
         
         MessageResponse response = MessageResponse.builder()
