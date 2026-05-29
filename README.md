@@ -37,6 +37,14 @@ src/main/java/com/psico/app/
 │   └── facade/
 │       └── EmotionPipelineFacade.java # [Facade] Simplifica el pipeline: recibe el mensaje, analiza la emoción, invoca la IA, registra notas clínicas y evalúa alertas de seguridad en un solo llamado.
 │
+├── analysis/                         # Análisis de Perfil Clínico
+│   ├── controller/
+│   │   └── AnalysisController.java   # Endpoints para obtener el análisis y resumen clínico del usuario.
+│   ├── model/
+│   │   └── ClinicalProfile.java      # Entidad con el resumen y evaluación clínica persistida del paciente.
+│   └── service/
+│       └── ClinicalAnalysisService.java # Lógica para procesar conversaciones y generar resúmenes psicoterapéuticos automáticos.
+│
 ├── auth/                             # Autenticación, Seguridad y Control de Acceso
 │   ├── controller/
 │   │   └── AuthController.java       # Endpoints públicos `/api/auth` para login y registro de usuarios.
@@ -53,6 +61,12 @@ src/main/java/com/psico/app/
 │       ├── AuthService.java          # Lógica de registro, hashing con BCrypt y generación de sesiones.
 │       ├── RateLimiterService.java   # [Rate Limiter] Control in-memory de fuerza bruta (5 intentos / 15 mins) con lista blanca local.
 │       └── CustomUserDetailsService.java # Carga las credenciales del usuario desde la base de datos para Spring Security.
+│
+├── common/                           # Utilidades y Respuestas Globales
+│   ├── exception/
+│   │   └── APIException.java         # Excepciones base personalizadas del sistema.
+│   └── response/
+│       └── APIResponse.java          # Formato estándar de respuestas JSON de éxito o error para la API.
 │
 ├── conversation/                     # Módulo de Chat y Sesiones Terapéuticas
 │   ├── controller/
@@ -114,6 +128,10 @@ src/main/java/com/psico/app/
 │   │   └── RiskAlertRepository.java  # Repositorio JPA para auditorías de riesgo clínico.
 │   └── service/
 │       └── RiskAlertService.java     # Lógica automática que escanea los textos de los chats en busca de síntomas alarmantes.
+│
+├── support/                          # Soporte Técnico y Ayuda
+│   └── service/
+│       └── SupportService.java       # Lógica para enviar o procesar reportes de problemas por parte de los usuarios (tickets de soporte).
 │
 ├── user/                             # Perfiles y Preferencias del Usuario
 │   ├── controller/

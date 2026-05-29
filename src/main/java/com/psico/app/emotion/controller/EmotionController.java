@@ -53,15 +53,15 @@ public class EmotionController {
     @Data
     public static class EmotionRequest {
         @NotNull
-        @JsonAlias("usuarioId")
+        @JsonAlias({"usuarioId", "userId"})
         private Long userId;
 
         @NotNull
-        @JsonAlias("tipo")
+        @JsonAlias({"tipo", "emotionType"})
         private EmotionType emotionType;
 
         @NotNull
-        @JsonAlias("intensidad")
+        @JsonAlias({"intensidad", "intensity"})
         private Double intensity;
     }
 }
