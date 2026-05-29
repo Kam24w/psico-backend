@@ -147,6 +147,17 @@ public class ConversationService {
     }
 
     @Transactional
+    public void resumeSession(Long userId, Long conversationId, String type) {
+        closeActiveSession(userId, type);
+        conversationRepository.findById(conversationId).ifPresent(conv -> {
+            if(conv.getUser().getId().equals(userId)) {
+                conv.setActive(true);
+                conversationRepository.save(conv);
+            }
+        });
+    }
+
+    @Transactional
     public void deleteSession(Long conversationId) {
         conversationRepository.deleteById(conversationId);
     }
