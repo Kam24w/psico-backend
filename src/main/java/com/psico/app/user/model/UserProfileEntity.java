@@ -31,8 +31,11 @@ public class UserProfileEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Column(name = "usuario_id")
+    private Long usuarioId;
 
     @Builder.Default
     @Column(name = "estado_emocional_actual")
