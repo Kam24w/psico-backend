@@ -98,6 +98,15 @@ public class ConversationController {
         return ResponseEntity.ok(ApiResponse.success("Active session closed successfully", null));
     }
 
+    @PostMapping("/resume/{conversationId}")
+    public ResponseEntity<ApiResponse<Void>> resumeSession(
+            @PathVariable @NonNull Long conversationId,
+            @org.springframework.web.bind.annotation.RequestParam Long userId,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "TEXTO") String sessionType) {
+        conversationService.resumeSession(userId, conversationId, sessionType);
+        return ResponseEntity.ok(ApiResponse.success("Session resumed successfully", null));
+    }
+
     @org.springframework.web.bind.annotation.DeleteMapping("/{conversationId}")
     public ResponseEntity<ApiResponse<Void>> deleteSession(@PathVariable @NonNull Long conversationId) {
         conversationService.deleteSession(conversationId);
