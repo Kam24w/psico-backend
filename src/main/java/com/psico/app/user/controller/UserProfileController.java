@@ -35,5 +35,5 @@ public class UserProfileController {
         return ResponseEntity.ok(ApiResponse.success("Preferences updated", profileService.updatePreferences(userId, request.preferences())));
     }
 
-    public static record PreferencesRequest(@NotBlank String preferences) {}
+    public static record PreferencesRequest(@com.fasterxml.jackson.annotation.JsonProperty("preferences") @NotBlank String preferences) {}
 }
