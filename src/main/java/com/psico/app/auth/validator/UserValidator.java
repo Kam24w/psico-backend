@@ -19,55 +19,55 @@ public class UserValidator {
 
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email is required");
+            throw new IllegalArgumentException("El correo electrónico es requerido");
         }
 
         if (email.length() > 30) {
-            throw new IllegalArgumentException("Email cannot exceed 30 characters");
+            throw new IllegalArgumentException("El correo electrónico no puede superar los 30 caracteres");
         }
 
         if (!Pattern.matches(EMAIL_REGEX, email)) {
-            throw new IllegalArgumentException("Invalid email format");
+            throw new IllegalArgumentException("Formato de correo electrónico inválido");
         }
     }
 
     private void validatePassword(String password) {
         if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password is required");
+            throw new IllegalArgumentException("La contraseña es requerida");
         }
 
         if (password.length() < 8) {
-            throw new IllegalArgumentException("Password must have at least 8 characters");
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
         }
 
         if (password.length() > 20) {
-            throw new IllegalArgumentException("Password cannot exceed 20 characters");
+            throw new IllegalArgumentException("La contraseña no puede superar los 20 caracteres");
         }
 
         if (!Pattern.compile("[A-Z]").matcher(password).find()) {
-            throw new IllegalArgumentException("Password must contain at least one uppercase letter");
+            throw new IllegalArgumentException("La contraseña debe contener al menos una letra mayúscula");
         }
 
         if (!Pattern.compile("[a-z]").matcher(password).find()) {
-            throw new IllegalArgumentException("Password must contain at least one lowercase letter");
+            throw new IllegalArgumentException("La contraseña debe contener al menos una letra minúscula");
         }
 
         if (!Pattern.compile("[0-9]").matcher(password).find()) {
-            throw new IllegalArgumentException("Password must contain at least one digit");
+            throw new IllegalArgumentException("La contraseña debe contener al menos un número");
         }
 
         if (!Pattern.compile("[@$!%*?&._-]").matcher(password).find()) {
-            throw new IllegalArgumentException("Password must contain at least one special character (@$!%*?&._-)");
+            throw new IllegalArgumentException("La contraseña debe contener al menos un carácter especial (@$!%*?&._-)");
         }
     }
 
     private void validateName(String name) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Name is required");
+            throw new IllegalArgumentException("El nombre es requerido");
         }
 
-        if (name.length() > 20) {
-            throw new IllegalArgumentException("Name cannot exceed 20 characters");
+        if (name.length() > 100) {
+            throw new IllegalArgumentException("El nombre no puede superar los 100 caracteres");
         }
     }
 }
