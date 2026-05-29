@@ -4,6 +4,7 @@ import com.psico.app.auth.model.User;
 import com.psico.app.user.model.UserProfileEntity;
 import com.psico.app.user.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,13 +47,16 @@ public class UserProfileService {
         int updated = userProfileRepository.updatePreferencesByUserId(userId, preferences);
 
         if (updated == 0) {
-            // No existe perfil: crear uno nuevo
-            UserProfileEntity newProfile = new UserProfileEntity();
-            newProfile.setUser(user);
-            newProfile.setUsuarioId(user.getId());
-            newProfile.setPreferences(preferences);
-            newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
-            userProfileRepository.save(newProfile);
+            try {
+                UserProfileEntity newProfile = new UserProfileEntity();
+                newProfile.setUser(user);
+                newProfile.setPreferences(preferences);
+                newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
+                userProfileRepository.save(newProfile);
+            } catch (DataIntegrityViolationException e) {
+                // If another thread inserted it, we just update it
+                userProfileRepository.updatePreferencesByUserId(userId, preferences);
+            }
         }
 
         return getProfile(userId);
@@ -65,13 +69,17 @@ public class UserProfileService {
         int updated = userProfileRepository.updateAvatarByUserId(userId, avatarUrl);
 
         if (updated == 0) {
-            UserProfileEntity newProfile = new UserProfileEntity();
-            newProfile.setUser(user);
-            newProfile.setUsuarioId(user.getId());
-            newProfile.setPreferences("[]");
-            newProfile.setAvatarUrl(avatarUrl);
-            newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
-            userProfileRepository.save(newProfile);
+            try {
+                UserProfileEntity newProfile = new UserProfileEntity();
+                newProfile.setUser(user);
+                newProfile.setPreferences("[]");
+                newProfile.setAvatarUrl(avatarUrl);
+                newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
+                userProfileRepository.save(newProfile);
+            } catch (DataIntegrityViolationException e) {
+                // If another thread inserted it, we just update it
+                userProfileRepository.updateAvatarByUserId(userId, avatarUrl);
+            }
         }
 
         return getProfile(userId);

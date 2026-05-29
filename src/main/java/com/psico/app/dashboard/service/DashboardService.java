@@ -7,7 +7,7 @@ import com.psico.app.conversation.service.ConversationService;
 import com.psico.app.emotion.model.EmotionType;
 import com.psico.app.memory.model.UserMemory;
 import com.psico.app.memory.service.MemoryService;
-import com.psico.app.risk.service.RiskService;
+import com.psico.app.ai.repository.SecurityAlertRepository;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class DashboardService {
 
     private final ConversationService conversationService;
-    private final RiskService riskService;
+    private final SecurityAlertRepository securityAlertRepository;
     private final MemoryService memoryService;
 
     public DashboardSummary getSummary(Long userId) {
@@ -64,9 +64,9 @@ public class DashboardService {
                 .newMemoriesThisWeek(newMemoriesThisWeek)
                 .weeklyProgress(weeklyProgress)
                 .emotionalTrend(emotionalTrend)
-                .latestAlert(riskService.getAlerts(userId).stream()
-                        .max(Comparator.comparing(a -> a.getCreatedAt()))
-                        .map(a -> a.getReason())
+                .latestAlert(securityAlertRepository.findByUserIdOrderByDetectedAtDesc(userId).stream()
+                        .findFirst()
+                        .map(a -> "Nivel " + a.getRiskLevel() + ": " + a.getType())
                         .orElse("Sin alertas recientes"))
                 .build();
     }

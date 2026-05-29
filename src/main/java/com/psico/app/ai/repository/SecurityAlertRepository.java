@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface SecurityAlertRepository extends JpaRepository<SecurityAlert, Long> {
     List<SecurityAlert> findByReviewedFalse();
+    List<SecurityAlert> findByUserIdOrderByDetectedAtDesc(Long userId);
 }

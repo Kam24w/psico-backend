@@ -9,7 +9,7 @@ import com.psico.app.ai.client.AIClient;
 import com.psico.app.ai.dto.AiResponse;
 import com.psico.app.ai.model.SecurityAlert;
 import com.psico.app.ai.repository.SecurityAlertRepository;
-import com.psico.app.ai.repository.ContextMemoryRepository;
+import com.psico.app.memory.repository.UserMemoryRepository;
 import com.psico.app.ai.repository.AIPersonalityRepository;
 import com.psico.app.auth.model.User;
 import com.psico.app.emotion.model.EmotionType;
@@ -27,10 +27,10 @@ public class AIService {
     private final ResponseGenerator responseGenerator;
     private final SecurityAlertRepository alertRepository;
     private final AIPersonalityRepository personalityRepository;
-    private final ContextMemoryRepository memoryRepository;
+    private final UserMemoryRepository memoryRepository;
     private final EntityManager entityManager;
 
-    public AiResponse generateResponse(Long userId, String userMessage, EmotionType emotion) {
+    public AiResponse generateResponse(Long userId, String userMessage, EmotionType emotion, java.util.List<com.psico.app.intervention.model.Recommendation> recommendations) {
         log.info("--- START AI GENERATION ---");
         log.info("User ID: {}, Message: {}, Emotion: {}", userId, userMessage, emotion);
 
@@ -46,7 +46,7 @@ public class AIService {
 
         String memoryContext = getRecentMemory(userId);
 
-        String systemPrompt   = responseGenerator.buildSystemPrompt(emotion, personalityPrompt);
+        String systemPrompt   = responseGenerator.buildSystemPrompt(emotion, personalityPrompt, recommendations);
         String finalUserMessage = responseGenerator.buildUserMessage(userMessage, emotion, memoryContext);
 
         log.info("SYSTEM PROMPT:\n{}", systemPrompt);
@@ -147,9 +147,9 @@ public class AIService {
     }
 
     private String getRecentMemory(Long userId) {
-        return memoryRepository.findByUserId(userId).stream()
+        return memoryRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .limit(5)
-                .map(m -> m.getKey() + ": " + m.getValue())
+                .map(m -> "Recuerdo: " + m.getText())
                 .reduce("", (a, b) -> a + "\n" + b);
     }
 }
