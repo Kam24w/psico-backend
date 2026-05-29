@@ -29,6 +29,13 @@ public class UserValidator {
         if (!Pattern.matches(EMAIL_REGEX, email)) {
             throw new IllegalArgumentException("Formato de correo electrónico inválido");
         }
+
+        // Validación extra: Bloquear dominios de prueba falsos
+        String domain = email.substring(email.indexOf("@") + 1).toLowerCase();
+        if (domain.startsWith("test") || domain.startsWith("ejemplo") || 
+            domain.equals("example.com") || domain.equals("fake.com") || domain.equals("correo.com")) {
+            throw new IllegalArgumentException("Por favor, utiliza un proveedor de correo real (ej. gmail, outlook, etc)");
+        }
     }
 
     private void validatePassword(String password) {
