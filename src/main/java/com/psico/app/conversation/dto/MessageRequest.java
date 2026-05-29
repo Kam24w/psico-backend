@@ -15,15 +15,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MessageRequest {
     @NotNull
-    @JsonAlias("usuarioId")
+    @JsonAlias({"usuarioId", "userId"})
     private Long userId;
 
     @NotBlank
     @Size(max = 2000)
-    @JsonAlias("contenido")
+    @JsonAlias({"contenido", "content"})
     private String content;
 
-    @JsonAlias("emocion")
+    @JsonAlias({"emocion", "emotion"})
     private EmotionType emotion;
 
     @JsonAlias({"tipoSesion", "sessionType"})

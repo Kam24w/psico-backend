@@ -43,7 +43,7 @@ public class MemoryController {
     }
 
     public record MemoryRequest(
-            @NotBlank @JsonAlias("texto") String content,
-            @NotNull @JsonAlias("emocionAsociada") EmotionType associatedEmotion
+            @NotBlank @JsonAlias({"texto", "content"}) String content,
+            @NotNull @JsonAlias({"emocionAsociada", "associatedEmotion"}) EmotionType associatedEmotion
     ) {}
 }
