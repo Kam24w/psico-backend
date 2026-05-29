@@ -16,4 +16,8 @@ public interface UserProfileRepository extends JpaRepository<UserProfileEntity, 
     @Modifying
     @Query("UPDATE UserProfileEntity u SET u.preferences = :preferences WHERE u.user.id = :userId")
     int updatePreferencesByUserId(@Param("userId") Long userId, @Param("preferences") String preferences);
+
+    @Modifying
+    @Query("UPDATE UserProfileEntity u SET u.avatarUrl = :avatarUrl WHERE u.user.id = :userId")
+    int updateAvatarByUserId(@Param("userId") Long userId, @Param("avatarUrl") String avatarUrl);
 }

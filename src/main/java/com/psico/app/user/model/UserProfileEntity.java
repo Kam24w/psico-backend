@@ -40,4 +40,7 @@ public class UserProfileEntity {
 
     @Column(name = "preferencias", columnDefinition = "TEXT")
     private String preferences;
+
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    private String avatarUrl;
 }
