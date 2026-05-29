@@ -97,9 +97,10 @@ public class AIService {
         int riskLevel = 0;
         String type = null;
 
-        if (lower.contains("suicidio") || lower.contains("quitarme la vida")
-                || lower.contains("matarme") || lower.contains("no quiero vivir")
-                || lower.contains("quiero morir") || lower.contains("acabar con mi vida")) {
+        if (lower.contains("suicidio") || lower.contains("suicidar") || lower.contains("suicidarme")
+                || lower.contains("quitarme la vida") || lower.contains("matarme") 
+                || lower.contains("no quiero vivir") || lower.contains("quiero morir") 
+                || lower.contains("acabar con mi vida")) {
             riskLevel = 10;
             type = "SUICIDIO";
         } else if (lower.contains("autolesion") || lower.contains("cortarme")
