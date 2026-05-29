@@ -38,6 +38,10 @@ public class Message {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<com.psico.app.ai.model.SecurityAlert> securityAlerts = new java.util.ArrayList<>();
+
     public enum Sender {
         USER, AI
     }

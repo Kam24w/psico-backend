@@ -34,8 +34,7 @@ public class UserProfileEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "usuario_id")
-    private Long usuarioId;
+    // usuarioId is mapped via the User entity above
 
     @Builder.Default
     @Column(name = "estado_emocional_actual")

@@ -40,8 +40,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(errorBody("INTERNAL_SERVER_ERROR", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));
+        // Log the actual exception details to avoid leaking them to the client
+        System.err.println("Unhandled exception: " + ex.getMessage());
+        ex.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(errorBody("INTERNAL_SERVER_ERROR", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred. Please contact support."));
     }
 
     private Map<String, Object> errorBody(String code, String message, int status, String detail) {

@@ -43,11 +43,11 @@ public class EmotionPipelineFacade {
         memoryService.saveMemory(userId, userMessage, baseEmotion);
         analysisService.analyzeConversation(userId, conversationService.getActiveUserHistory(userId, sessionType));
 
-        // 3. Solicitar respuesta a la IA
-        AiResponse aiResponse = aiService.generateResponse(userId, userMessage, baseEmotion);
+        // 3. Obtener recomendaciones adicionales
+        java.util.List<com.psico.app.intervention.model.Recommendation> recommendations = recommendationService.getRecommendations(baseEmotion);
 
-        // 4. Obtener recomendaciones adicionales
-        recommendationService.getRecommendations(baseEmotion);
+        // 4. Solicitar respuesta a la IA
+        AiResponse aiResponse = aiService.generateResponse(userId, userMessage, baseEmotion, recommendations);
 
         // 5. Guardar la respuesta de la IA y retornar
         return conversationService.storeAiResponse(conversation, aiResponse, baseEmotion);
