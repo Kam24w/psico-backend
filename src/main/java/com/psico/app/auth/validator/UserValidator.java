@@ -9,7 +9,7 @@ import com.psico.app.auth.dto.AuthDTOs.RegisterRequest;
 @Component
 public class UserValidator {
 
-    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@(.+)$";
+    private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
 
     public void validarRegistro(RegisterRequest request) {
         validateEmail(request.getEmail());
@@ -36,12 +36,28 @@ public class UserValidator {
             throw new IllegalArgumentException("Password is required");
         }
 
-        if (password.length() < 6) {
-            throw new IllegalArgumentException("Password must have at least 6 characters");
+        if (password.length() < 8) {
+            throw new IllegalArgumentException("Password must have at least 8 characters");
         }
 
         if (password.length() > 20) {
             throw new IllegalArgumentException("Password cannot exceed 20 characters");
+        }
+
+        if (!Pattern.compile("[A-Z]").matcher(password).find()) {
+            throw new IllegalArgumentException("Password must contain at least one uppercase letter");
+        }
+
+        if (!Pattern.compile("[a-z]").matcher(password).find()) {
+            throw new IllegalArgumentException("Password must contain at least one lowercase letter");
+        }
+
+        if (!Pattern.compile("[0-9]").matcher(password).find()) {
+            throw new IllegalArgumentException("Password must contain at least one digit");
+        }
+
+        if (!Pattern.compile("[@$!%*?&._-]").matcher(password).find()) {
+            throw new IllegalArgumentException("Password must contain at least one special character (@$!%*?&._-)");
         }
     }
 
