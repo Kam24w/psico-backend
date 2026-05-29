@@ -30,14 +30,13 @@ public class DashboardService {
     private final MemoryService memoryService;
 
     public DashboardSummary getSummary(Long userId) {
-        int activeConversations = !conversationService.getActiveUserHistory(userId).isEmpty() ? 1 : 0;
-        
+        // Obtenemos todas las conversaciones de una vez
+        List<Conversation> conversations = conversationService.getUserConversations(userId);
+        int activeConversations = (int) conversations.stream().filter(c -> Boolean.TRUE.equals(c.getActive())).count();
+        int finishedChats = (int) conversations.stream().filter(c -> !Boolean.TRUE.equals(c.getActive())).count();
+
         List<UserMemory> allMemories = memoryService.getMemories(userId);
         int savedMemories = allMemories.size();
-
-        // Calcular finishedChats
-        List<Conversation> conversations = conversationService.getUserConversations(userId);
-        int finishedChats = (int) conversations.stream().filter(c -> !c.isActive()).count();
 
         // Calcular newMemoriesThisWeek
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7);
@@ -50,9 +49,10 @@ public class DashboardService {
 
         // Calcular emotionalTrend
         double emotionalTrend = 0.0;
-        if (weeklyProgress.size() >= 2) {
-            double today = weeklyProgress.get(6);
-            double yesterday = weeklyProgress.get(5);
+        int size = weeklyProgress.size();
+        if (size >= 2) {
+            double today = weeklyProgress.get(size - 1);
+            double yesterday = weeklyProgress.get(size - 2);
             emotionalTrend = today - yesterday; 
         }
 
