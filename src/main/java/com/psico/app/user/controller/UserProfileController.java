@@ -35,6 +35,14 @@ public class UserProfileController {
         return ResponseEntity.ok(ApiResponse.success("Preferences updated", profileService.updatePreferences(userId, request.getPreferences())));
     }
 
+    @PutMapping("/{userId}/avatar")
+    public ResponseEntity<ApiResponse<UserProfileService.UserProfile>> updateAvatar(
+            @PathVariable Long userId,
+            @Valid @RequestBody AvatarRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success("Avatar updated", profileService.updateAvatar(userId, request.getAvatarUrl())));
+    }
+
     public static class PreferencesRequest {
         @NotBlank
         private String preferences;
@@ -45,6 +53,19 @@ public class UserProfileController {
 
         public void setPreferences(String preferences) {
             this.preferences = preferences;
+        }
+    }
+
+    public static class AvatarRequest {
+        @NotBlank
+        private String avatarUrl;
+
+        public String getAvatarUrl() {
+            return avatarUrl;
+        }
+
+        public void setAvatarUrl(String avatarUrl) {
+            this.avatarUrl = avatarUrl;
         }
     }
 }

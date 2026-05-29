@@ -27,12 +27,15 @@ public class UserProfileService {
                 ? profile.getPreferences()
                 : "[]";
 
+        String avatarUrl = (profile != null) ? profile.getAvatarUrl() : null;
+
         return UserProfile.builder()
                 .userId(user.getId())
                 .fullName(user.getName())
                 .email(user.getEmail())
                 .currentEmotionalState(emotionalState)
                 .preferences(preferences)
+                .avatarUrl(avatarUrl)
                 .build();
     }
 
@@ -54,6 +57,24 @@ public class UserProfileService {
         return getProfile(userId);
     }
 
+    @Transactional
+    public UserProfile updateAvatar(Long userId, String avatarUrl) {
+        User user = userService.getById(userId);
+
+        int updated = userProfileRepository.updateAvatarByUserId(userId, avatarUrl);
+
+        if (updated == 0) {
+            UserProfileEntity newProfile = new UserProfileEntity();
+            newProfile.setUser(user);
+            newProfile.setPreferences("[]");
+            newProfile.setAvatarUrl(avatarUrl);
+            newProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
+            userProfileRepository.save(newProfile);
+        }
+
+        return getProfile(userId);
+    }
+
     @lombok.Builder
     @lombok.Data
     public static class UserProfile {
@@ -62,5 +83,6 @@ public class UserProfileService {
         private String email;
         private String currentEmotionalState;
         private String preferences;
+        private String avatarUrl;
     }
 }
