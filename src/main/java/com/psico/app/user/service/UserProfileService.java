@@ -21,6 +21,7 @@ public class UserProfileService {
                     UserProfileEntity userProfile = new UserProfileEntity();
                     userProfile.setUser(user);
                     userProfile.setPreferences("[]");
+                    userProfile.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
                     return userProfile;
                 });
 
@@ -41,7 +42,11 @@ public class UserProfileService {
     public UserProfile updatePreferences(Long userId, String preferences) {
         User user = userService.getById(userId);
         UserProfileEntity profile = userProfileRepository.findByUserId(userId)
-                .orElseGet(UserProfileEntity::new);
+                .orElseGet(() -> {
+                    UserProfileEntity p = new UserProfileEntity();
+                    p.setCurrentEmotionalState(com.psico.app.emotion.model.EmotionType.NEUTRAL);
+                    return p;
+                });
         profile.setPreferences(preferences);
         profile.setUser(user);
         userProfileRepository.save(profile);
